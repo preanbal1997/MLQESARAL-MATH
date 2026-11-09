@@ -179,15 +179,8 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
 
           <div className="flex flex-wrap gap-2 shrink-0">
             <button
-              onClick={onOpenSyncModal}
-              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-md cursor-pointer transition-all"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              Sync to Google Sheets
-            </button>
-            <button
               onClick={handleExportSummaryCSV}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/30 cursor-pointer transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/30 cursor-pointer transition-all shadow-xs"
             >
               <Download className="w-4 h-4" />
               Export Overview CSV

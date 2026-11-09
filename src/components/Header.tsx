@@ -115,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Real-Time Sync & Stats Bar */}
+        {/* Stats Bar */}
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
           {/* Quick Metrics Pills */}
           <div className="flex items-center gap-2 bg-sky-950/30 backdrop-blur-xs border border-white/15 px-3 py-1.5 rounded-xl">
@@ -128,38 +128,6 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="text-[10px] text-sky-200 uppercase font-bold">School Avg</div>
               <div className="text-base font-black text-emerald-300">{schoolAveragePct.toFixed(1)}%</div>
             </div>
-          </div>
-
-          {/* Google Sheets Sync Status Button */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onOpenSheetsModal}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all border ${
-                syncConfig.spreadsheetId
-                  ? 'bg-emerald-500/90 hover:bg-emerald-500 border-emerald-300 text-white'
-                  : 'bg-white/15 hover:bg-white/25 border-white/30 text-white'
-              }`}
-              title="Google Sheets Data Synchronization"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-amber-300" />
-              <span>
-                {syncConfig.spreadsheetId ? 'Google Sheets Synced' : 'Sync Google Sheet'}
-              </span>
-              {syncConfig.spreadsheetId && (
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              )}
-            </button>
-
-            {syncConfig.spreadsheetId && (
-              <button
-                onClick={onSyncNow}
-                disabled={isSyncing}
-                className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-xl border border-white/20 cursor-pointer transition-all"
-                title="Sync Changes to Google Sheet Now"
-              >
-                <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              </button>
-            )}
           </div>
         </div>
       </div>

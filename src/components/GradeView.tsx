@@ -30,7 +30,8 @@ import {
   Check,
   X,
   FileSpreadsheet,
-  Info
+  Info,
+  FileDown
 } from 'lucide-react';
 import type { GradeLevel, GradeData, Learner, WorksheetConfig, ScoreValue } from '../types';
 import { computeLearnerStats, exportToCSV } from '../services/googleSheets';
@@ -716,14 +717,14 @@ export const GradeView: React.FC<GradeViewProps> = ({
                           {index + 1}
                         </td>
 
-                        {/* Sticky Column 2: Print IMIP Button (64px) */}
+                        {/* Sticky Column 2: Print & Download IMIP PDF Button (64px) */}
                         <td className="sticky left-[40px] z-10 bg-white group-hover:bg-sky-50 p-1.5 text-center w-[64px] min-w-[64px] max-w-[64px] border-r border-slate-200">
                           <button
                             onClick={() => onOpenIMIP(l)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-md shadow-2xs cursor-pointer text-[10px] transition-all"
-                            title="Print Individual Mathematics Intervention Plan (IMIP)"
+                            className="inline-flex items-center gap-1 px-1.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-md shadow-2xs cursor-pointer text-[10px] transition-all"
+                            title="Auto-download and print 11x13 Individual Mathematics Intervention Plan (IMIP) PDF"
                           >
-                            <Printer className="w-3 h-3" />
+                            <FileDown className="w-3 h-3 text-slate-950 shrink-0" />
                             <span>IMIP</span>
                           </button>
                         </td>
@@ -1083,9 +1084,9 @@ export const GradeView: React.FC<GradeViewProps> = ({
                           <button
                             onClick={() => onOpenIMIP(learner)}
                             className="p-1.5 hover:bg-amber-100 text-amber-700 rounded-lg transition-colors cursor-pointer"
-                            title="Print IMIP"
+                            title="Auto-download & Print IMIP (11x13 PDF)"
                           >
-                            <Printer className="w-4 h-4" />
+                            <FileDown className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => {
