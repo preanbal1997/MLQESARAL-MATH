@@ -40,9 +40,8 @@ export default function App() {
   const [isSheetsModalOpen, setIsSheetsModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(() => {
-    return localStorage.getItem('mlqes_user_email') || 'preanbal1997@gmail.com';
-  });
+  // This must reflect Firebase Authentication only, never a remembered email typed into the welcome form.
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Selected learner for IMIP printing modal
@@ -164,21 +163,16 @@ export default function App() {
     }
   };
 
-  const handleSignInWithEmail = (email: string, teacherName?: string) => {
-    setUserEmail(email);
-    localStorage.setItem('mlqes_user_email', email);
-    if (teacherName) {
-      localStorage.setItem('mlqes_teacher_name', teacherName);
-    }
+  const handleSignInWithEmail = (_email: string, _teacherName?: string) => {
+    // Typing an email is not authentication. Firestore access requires a real Google sign-in.
+    setCloudMessage('Email entry alone cannot authorize cloud access. Please use Google Account Popup.');
+    setIsSignInModalOpen(true);
   };
 
   const handleUnlock = (email?: string) => {
     setIsUnlocked(true);
     sessionStorage.setItem('mlqes_site_unlocked', 'true');
-    if (email) {
-      setUserEmail(email);
-      localStorage.setItem('mlqes_user_email', email);
-    }
+    // Welcome-page email is a profile field, not a Firebase-authenticated identity.
   };
 
   const handleLockSite = () => {
@@ -197,9 +191,16 @@ export default function App() {
       const res = await googleSignIn();
       if (res) {
         setAccessToken(res.accessToken);
-        const email = res.user.email || 'Teacher';
-        setUserEmail(email);
-        localStorage.setItem('mlqes_user_email', email);
+        const email = (res.user.email || '').toLowerCase();
+        if (email !== AUTHORIZED_TEACHER_EMAIL) {
+          await logout();
+          setUserEmail(null);
+          setAccessToken(null);
+          setCloudMessage('Access denied. Please choose mlqes.caloocan101@gmail.com in the Google account popup.');
+          throw new Error('Only mlqes.caloocan101@gmail.com is authorized to edit learner records.');
+        }
+        setUserEmail(res.user.email);
+        localStorage.setItem('mlqes_user_email', res.user.email || '');
       }
     } catch (e) {
       console.error('Sign-in failed:', e);
