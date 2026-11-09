@@ -179,7 +179,80 @@ export const GradeView: React.FC<GradeViewProps> = ({
     setIsWorksheetConfigOpen(false);
   };
 
-  // Handlers for Score Cell Input
+  // Handler to update PTS (total items) for a specific worksheet
+  const handleUpdateWorksheetPTS = (wsNum: number, newPTS: number) => {
+    const pts = Math.max(1, Math.min(200, Number(newPTS) || 1));
+    const currentConfigs = [...gradeData.worksheetConfigs];
+    const existingIndex = currentConfigs.findIndex(c => c.number === wsNum);
+    
+    if (existingIndex >= 0) {
+      currentConfigs[existingIndex] = {
+        ...currentConfigs[existingIndex],
+        defaultTotalItems: pts
+      };
+    } else {
+      currentConfigs.push({
+        number: wsNum,
+        title: `Worksheet ${wsNum}`,
+        defaultTotalItems: pts
+      });
+    }
+
+    // Automatically update learners' totalItems for this worksheet if they have recorded scores
+    const updatedLearners = gradeData.learners.map(l => {
+      const existing = l.scores[wsNum];
+      if (existing) {
+        return {
+          ...l,
+          scores: {
+            ...l.scores,
+            [wsNum]: {
+              score: Math.min(existing.score, pts),
+              totalItems: pts
+            }
+          }
+        };
+      }
+      return l;
+    });
+
+    onUpdateGradeData({
+      ...gradeData,
+      worksheetConfigs: currentConfigs,
+      learners: updatedLearners
+    });
+  };
+
+  // Handler to batch set PTS for all worksheets in this grade
+  const handleBatchSetPTS = (ptsValue: number) => {
+    const pts = Math.max(1, Math.min(200, ptsValue));
+    const updatedConfigs = gradeData.worksheetConfigs.map(c => ({
+      ...c,
+      defaultTotalItems: pts
+    }));
+
+    const updatedLearners = gradeData.learners.map(l => {
+      const newScores = { ...l.scores };
+      Object.keys(newScores).forEach(key => {
+        const w = Number(key);
+        if (newScores[w]) {
+          newScores[w] = {
+            score: Math.min(newScores[w].score, pts),
+            totalItems: pts
+          };
+        }
+      });
+      return { ...l, scores: newScores };
+    });
+
+    onUpdateGradeData({
+      ...gradeData,
+      worksheetConfigs: updatedConfigs,
+      learners: updatedLearners
+    });
+  };
+
+  // Handlers for Score Cell Input (Both Score and PTS editable)
   const handleStartEditCell = (learnerId: string, wsNum: number, currentEntry?: ScoreValue) => {
     const config = gradeData.worksheetConfigs.find(c => c.number === wsNum);
     const defItems = config?.defaultTotalItems || 30;
@@ -196,13 +269,23 @@ export const GradeView: React.FC<GradeViewProps> = ({
     const { learnerId, wsNum, scoreStr, itemsStr } = editingCell;
 
     let scoreVal: number | null = null;
-    let itemsVal = Number(itemsStr);
+    let itemsVal = parseFloat(itemsStr.trim());
+
+    if (isNaN(itemsVal) || itemsVal <= 0) {
+      const config = gradeData.worksheetConfigs.find(c => c.number === wsNum);
+      itemsVal = config?.defaultTotalItems || 30;
+    }
 
     // Support entering "28/30" or "28 / 30" in scoreStr
     if (scoreStr.includes('/')) {
       const parts = scoreStr.split('/');
       scoreVal = parseFloat(parts[0].trim());
-      itemsVal = parseFloat(parts[1].trim());
+      if (parts[1] && parts[1].trim()) {
+        const parsedItems = parseFloat(parts[1].trim());
+        if (!isNaN(parsedItems) && parsedItems > 0) {
+          itemsVal = parsedItems;
+        }
+      }
     } else if (scoreStr.trim() !== '') {
       scoreVal = parseFloat(scoreStr.trim());
     }
@@ -210,7 +293,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
     const updatedLearners = gradeData.learners.map(l => {
       if (l.id !== learnerId) return l;
       const newScores = { ...l.scores };
-      if (scoreVal !== null && !isNaN(scoreVal) && itemsVal > 0 && !isNaN(itemsVal)) {
+      if (scoreVal !== null && !isNaN(scoreVal)) {
         newScores[wsNum] = {
           score: Math.min(scoreVal, itemsVal),
           totalItems: itemsVal
@@ -472,30 +555,45 @@ export const GradeView: React.FC<GradeViewProps> = ({
         <div className="w-full bg-white rounded-b-2xl border border-slate-200 shadow-xs overflow-hidden">
           {/* Table Header Filter & Instructions Bar */}
           <div className="p-3 sm:p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 flex-1 max-w-sm">
-              <div className="relative w-full">
+            <div className="flex flex-wrap items-center gap-3 flex-1">
+              <div className="relative min-w-[200px] max-w-xs">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search student name or LRN..."
+                  placeholder="Search student or LRN..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
+
+              {/* Quick Batch Set PTS */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1 rounded-lg">
+                <span className="text-slate-500 font-bold text-[11px]">Set all WS to:</span>
+                {[20, 25, 30, 35, 40].map(pts => (
+                  <button
+                    key={pts}
+                    onClick={() => handleBatchSetPTS(pts)}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-100 hover:text-sky-700 text-slate-700 font-mono font-bold text-[10px] rounded border border-slate-200 cursor-pointer transition-colors"
+                    title={`Set all ${gradeData.totalWorksheets} worksheets in Grade ${gradeData.grade} to ${pts} total points`}
+                  >
+                    {pts} pts
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-lg">
-                <Info className="w-3.5 h-3.5 text-sky-500" />
-                <span>
-                  Click any score cell to edit as <strong className="font-mono text-slate-800">Score / Total Items</strong> (e.g. 28 / 30).
+            <div className="flex items-center gap-2">
+              <div className="hidden lg:flex items-center gap-1.5 text-slate-600 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg">
+                <Info className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                <span className="text-[11px]">
+                  <strong>Editable PTS:</strong> Edit <span className="font-mono text-sky-800 font-bold">PTS</span> in any column header or click any cell to edit both <span className="font-mono text-sky-800 font-bold">Score & PTS</span>.
                 </span>
               </div>
 
               <button
                 onClick={() => setIsAddLearnerOpen(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg cursor-pointer"
+                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg cursor-pointer shadow-xs text-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Student
@@ -504,27 +602,27 @@ export const GradeView: React.FC<GradeViewProps> = ({
           </div>
 
           {/* Detailed Wide-Spanning Grading Table */}
-          <div className="w-full overflow-x-auto max-h-[70vh] relative">
+          <div className="w-full overflow-x-auto max-h-[72vh] relative scrollbar-thin">
             <table className="w-full text-left border-collapse text-xs">
               <thead className="sticky top-0 z-20 bg-slate-100 border-b-2 border-slate-300 shadow-xs">
                 <tr className="text-slate-700 font-bold uppercase text-[11px]">
-                  {/* Sticky Left Column 1: No. & Actions */}
-                  <th className="sticky left-0 z-30 bg-slate-100 p-2.5 text-center w-12 border-r border-slate-300">
+                  {/* Sticky Column 1: # (40px) */}
+                  <th className="sticky left-0 z-30 bg-slate-100 p-2 text-center w-[40px] min-w-[40px] max-w-[40px] border-r border-slate-300">
                     #
                   </th>
 
-                  {/* Sticky Left Column 2: Print IMIP Button */}
-                  <th className="sticky left-12 z-30 bg-slate-100 p-2.5 text-center w-24 border-r border-slate-300">
+                  {/* Sticky Column 2: IMIP (64px) */}
+                  <th className="sticky left-[40px] z-30 bg-slate-100 p-2 text-center w-[64px] min-w-[64px] max-w-[64px] border-r border-slate-300">
                     IMIP
                   </th>
 
-                  {/* Sticky Left Column 3: LRN */}
-                  <th className="sticky left-36 z-30 bg-slate-100 p-2.5 w-32 border-r border-slate-300">
+                  {/* Sticky Column 3: LRN (110px) */}
+                  <th className="sticky left-[104px] z-30 bg-slate-100 p-2 text-left w-[110px] min-w-[110px] max-w-[110px] border-r border-slate-300">
                     LRN
                   </th>
 
-                  {/* Sticky Left Column 4: Student Name */}
-                  <th className="sticky left-68 z-30 bg-slate-100 p-2.5 min-w-[200px] border-r-2 border-slate-400 shadow-r">
+                  {/* Sticky Column 4: Student Name (190px) */}
+                  <th className="sticky left-[214px] z-30 bg-slate-100 p-2 text-left w-[190px] min-w-[190px] max-w-[190px] border-r-2 border-slate-400 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.12)]">
                     Learner Name
                   </th>
 
@@ -533,15 +631,39 @@ export const GradeView: React.FC<GradeViewProps> = ({
                     const wsNum = i + 1;
                     const config = gradeData.worksheetConfigs.find(c => c.number === wsNum);
                     const defItems = config?.defaultTotalItems || 25;
+                    const isWS1 = wsNum === 1;
 
                     return (
                       <th
                         key={wsNum}
-                        className="p-2 border-r border-slate-300 text-center min-w-[90px] hover:bg-slate-200 transition-colors"
+                        className={`p-2 border-r border-slate-300 text-center min-w-[105px] max-w-[115px] ${
+                          isWS1
+                            ? 'bg-amber-100/90 border-l-2 border-l-amber-500 shadow-inner'
+                            : 'bg-slate-100 hover:bg-slate-200/70'
+                        } transition-colors`}
                       >
-                        <div className="font-extrabold text-slate-800">WS {wsNum}</div>
-                        <div className="text-[10px] font-mono text-slate-500 font-normal">
-                          (/{defItems} pts)
+                        <div className="flex items-center justify-center gap-1">
+                          <span className={`font-black text-xs ${isWS1 ? 'text-amber-950 font-bold' : 'text-slate-800'}`}>
+                            WS {wsNum}
+                          </span>
+                          {isWS1 && (
+                            <span className="px-1 py-0.2 bg-amber-500 text-slate-950 font-black text-[9px] rounded uppercase shadow-2xs">
+                              WS 1
+                            </span>
+                          )}
+                        </div>
+                        {/* Editable PTS input in the header */}
+                        <div className="flex items-center justify-center gap-1 mt-1">
+                          <span className="text-[10px] font-bold text-slate-500">PTS:</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={200}
+                            value={defItems}
+                            onChange={e => handleUpdateWorksheetPTS(wsNum, parseInt(e.target.value) || 1)}
+                            className="w-12 text-center font-mono font-bold text-[11px] bg-white border border-slate-300 rounded px-1 py-0.5 text-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-500 hover:border-sky-500 shadow-2xs cursor-text"
+                            title={`Click to edit total PTS for WS ${wsNum}`}
+                          />
                         </div>
                       </th>
                     );
@@ -583,38 +705,38 @@ export const GradeView: React.FC<GradeViewProps> = ({
                     return (
                       <tr
                         key={l.id}
-                        className={`hover:bg-sky-50/60 transition-colors ${
-                          index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                        className={`group hover:bg-sky-50/70 transition-colors ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
                         }`}
                       >
-                        {/* Sticky Index */}
-                        <td className="sticky left-0 z-10 bg-inherit p-2 text-center font-mono font-bold text-slate-600 border-r border-slate-200">
+                        {/* Sticky Column 1: # (40px) */}
+                        <td className="sticky left-0 z-10 bg-white group-hover:bg-sky-50 p-2 text-center font-mono font-bold text-slate-600 w-[40px] min-w-[40px] max-w-[40px] border-r border-slate-200">
                           {index + 1}
                         </td>
 
-                        {/* Sticky Print IMIP Action Button */}
-                        <td className="sticky left-12 z-10 bg-inherit p-2 text-center border-r border-slate-200">
+                        {/* Sticky Column 2: Print IMIP Button (64px) */}
+                        <td className="sticky left-[40px] z-10 bg-white group-hover:bg-sky-50 p-1.5 text-center w-[64px] min-w-[64px] max-w-[64px] border-r border-slate-200">
                           <button
                             onClick={() => onOpenIMIP(l)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-md shadow-xs cursor-pointer text-[11px] transition-all"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-md shadow-2xs cursor-pointer text-[10px] transition-all"
                             title="Print Individual Mathematics Intervention Plan (IMIP)"
                           >
-                            <Printer className="w-3.5 h-3.5" />
+                            <Printer className="w-3 h-3" />
                             <span>IMIP</span>
                           </button>
                         </td>
 
-                        {/* Sticky LRN */}
-                        <td className="sticky left-36 z-10 bg-inherit p-2 font-mono text-[11px] text-slate-700 border-r border-slate-200">
+                        {/* Sticky Column 3: LRN (110px) */}
+                        <td className="sticky left-[104px] z-10 bg-white group-hover:bg-sky-50 p-2 font-mono text-[11px] text-slate-700 w-[110px] min-w-[110px] max-w-[110px] border-r border-slate-200 truncate">
                           {l.lrn || '-'}
                         </td>
 
-                        {/* Sticky Name */}
-                        <td className="sticky left-68 z-10 bg-inherit p-2 font-extrabold text-slate-900 border-r-2 border-slate-300 shadow-r">
+                        {/* Sticky Column 4: Student Name (190px) */}
+                        <td className="sticky left-[214px] z-10 bg-white group-hover:bg-sky-50 p-2 font-extrabold text-slate-900 w-[190px] min-w-[190px] max-w-[190px] border-r-2 border-slate-300 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.12)]">
                           <div className="flex items-center justify-between gap-1">
-                            <span>{l.name}</span>
+                            <span className="truncate">{l.name}</span>
                             <span
-                              className={`text-[9px] px-1 py-0.2 rounded font-bold ${
+                              className={`text-[9px] px-1 py-0.2 rounded font-bold shrink-0 ${
                                 l.gender === 'Male'
                                   ? 'bg-blue-100 text-blue-700'
                                   : 'bg-pink-100 text-pink-700'
@@ -625,7 +747,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
                           </div>
                         </td>
 
-                        {/* Editable Worksheet Score Cells */}
+                        {/* Editable Worksheet Score & PTS Cells */}
                         {Array.from({ length: gradeData.totalWorksheets }).map((_, i) => {
                           const wsNum = i + 1;
                           const scoreEntry = l.scores[wsNum];
@@ -633,38 +755,80 @@ export const GradeView: React.FC<GradeViewProps> = ({
                             editingCell?.learnerId === l.id && editingCell?.wsNum === wsNum;
                           const config = gradeData.worksheetConfigs.find(c => c.number === wsNum);
                           const defItems = config?.defaultTotalItems || 25;
+                          const isWS1 = wsNum === 1;
 
+                          // Editing cell: Side-by-side editable Score AND PTS
                           if (isEditingThisCell) {
                             return (
                               <td
                                 key={wsNum}
-                                className="p-1 border-r border-slate-200 bg-amber-50 text-center"
+                                className={`p-1 border-r border-slate-200 ${
+                                  isWS1 ? 'bg-amber-100/70 border-l border-l-amber-400' : 'bg-amber-50/90'
+                                } text-center z-10 relative`}
                               >
-                                <div className="flex items-center justify-center gap-1">
-                                  <input
-                                    type="text"
-                                    autoFocus
-                                    placeholder={`${defItems}`}
-                                    value={editingCell.scoreStr}
-                                    onChange={e =>
-                                      setEditingCell({
-                                        ...editingCell,
-                                        scoreStr: e.target.value
-                                      })
-                                    }
-                                    onKeyDown={e => {
-                                      if (e.key === 'Enter') handleSaveCell();
-                                      if (e.key === 'Escape') setEditingCell(null);
-                                    }}
-                                    className="w-16 px-1.5 py-1 text-center font-bold text-xs bg-white border-2 border-amber-500 rounded focus:outline-none"
-                                  />
-                                  <button
-                                    onClick={handleSaveCell}
-                                    className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded cursor-pointer"
-                                    title="Save"
-                                  >
-                                    <Check className="w-3 h-3" />
-                                  </button>
+                                <div className="flex flex-col items-center p-1 bg-white border-2 border-amber-500 rounded-lg shadow-md min-w-[125px]">
+                                  <div className="text-[9px] font-bold text-amber-800 uppercase mb-1">
+                                    WS {wsNum} • Score / PTS
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <div className="flex flex-col items-center">
+                                      <label className="text-[8px] font-bold text-slate-500 uppercase">Score</label>
+                                      <input
+                                        type="number"
+                                        autoFocus
+                                        min={0}
+                                        placeholder="0"
+                                        value={editingCell.scoreStr}
+                                        onChange={e =>
+                                          setEditingCell({
+                                            ...editingCell,
+                                            scoreStr: e.target.value
+                                          })
+                                        }
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') handleSaveCell();
+                                          if (e.key === 'Escape') setEditingCell(null);
+                                        }}
+                                        className="w-12 px-1 py-1 text-center font-black font-mono text-xs bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                      />
+                                    </div>
+                                    <span className="text-slate-400 font-bold text-sm mt-3">/</span>
+                                    <div className="flex flex-col items-center">
+                                      <label className="text-[8px] font-bold text-slate-500 uppercase">PTS</label>
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        max={200}
+                                        placeholder={`${defItems}`}
+                                        value={editingCell.itemsStr}
+                                        onChange={e =>
+                                          setEditingCell({
+                                            ...editingCell,
+                                            itemsStr: e.target.value
+                                          })
+                                        }
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') handleSaveCell();
+                                          if (e.key === 'Escape') setEditingCell(null);
+                                        }}
+                                        className="w-12 px-1 py-1 text-center font-black font-mono text-xs bg-sky-50 border border-sky-300 rounded text-sky-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 mt-1.5 pt-1 border-t border-slate-100 w-full justify-center">
+                                    <button
+                                      onClick={handleSaveCell}
+                                      className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
+                                    >
+                                      <Check className="w-3 h-3" /> Save
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingCell(null)}
+                                      className="px-1.5 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[10px] font-semibold cursor-pointer"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
                                 </div>
                               </td>
                             );
@@ -679,30 +843,47 @@ export const GradeView: React.FC<GradeViewProps> = ({
                             <td
                               key={wsNum}
                               onClick={() => handleStartEditCell(l.id, wsNum, scoreEntry)}
-                              className="p-2 border-r border-slate-200 text-center cursor-pointer hover:bg-amber-100/50 transition-colors group/cell"
-                              title="Click to edit score / total items"
+                              className={`p-2 border-r border-slate-200 text-center cursor-pointer hover:bg-amber-100/60 transition-colors group/cell ${
+                                isWS1 ? 'bg-amber-50/50 border-l border-l-amber-200' : ''
+                              }`}
+                              title="Click to edit Score and PTS"
                             >
                               {hasScore ? (
-                                <div className="flex flex-col items-center">
-                                  <span className="font-mono font-bold text-slate-800 text-xs">
-                                    {scoreEntry.score} / {scoreEntry.totalItems}
-                                  </span>
-                                  <span
-                                    className={`text-[9px] font-bold ${
-                                      cellPct! >= 85
-                                        ? 'text-emerald-600'
-                                        : cellPct! >= 75
-                                        ? 'text-blue-600'
-                                        : 'text-rose-600'
-                                    }`}
-                                  >
-                                    {cellPct!.toFixed(0)}%
-                                  </span>
+                                <div className="flex flex-col items-center group-hover/cell:scale-105 transition-transform">
+                                  <div className="font-mono font-black text-slate-900 text-xs flex items-center gap-1">
+                                    <span>{scoreEntry.score}</span>
+                                    <span className="text-slate-400 font-normal">/</span>
+                                    <span
+                                      className="text-sky-800 bg-sky-100 px-1 py-0.2 rounded text-[10px] font-bold"
+                                      title="Total PTS for this student"
+                                    >
+                                      {scoreEntry.totalItems} pts
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <span
+                                      className={`text-[10px] font-bold font-mono ${
+                                        cellPct! >= 85
+                                          ? 'text-emerald-700'
+                                          : cellPct! >= 75
+                                          ? 'text-blue-700'
+                                          : 'text-rose-600'
+                                      }`}
+                                    >
+                                      {cellPct!.toFixed(0)}%
+                                    </span>
+                                    <Edit2 className="w-2.5 h-2.5 text-slate-300 group-hover/cell:text-amber-600" />
+                                  </div>
                                 </div>
                               ) : (
-                                <span className="text-slate-300 group-hover/cell:text-slate-500 font-mono text-xs">
-                                  - / {defItems}
-                                </span>
+                                <div className="flex flex-col items-center text-slate-400 group-hover/cell:text-slate-700">
+                                  <span className="font-mono text-xs">
+                                    - / <strong className="text-sky-800">{defItems} pts</strong>
+                                  </span>
+                                  <span className="text-[9px] text-slate-400 group-hover/cell:text-amber-600 font-semibold mt-0.5 flex items-center gap-0.5">
+                                    <Plus className="w-2.5 h-2.5" /> Enter
+                                  </span>
+                                </div>
                               )}
                             </td>
                           );
