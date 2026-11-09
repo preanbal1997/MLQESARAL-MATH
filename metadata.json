@@ -1,0 +1,6 @@
+{
+  "name": "MLQES ARAL MATH MONITORING SITE",
+  "description": "Manuel L. Quezon Elementary School ARAL Math Monitoring Site for Grades 1 to 6 with real-time score tracking, Google Sheets sync, analytics, and printable IMIP.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

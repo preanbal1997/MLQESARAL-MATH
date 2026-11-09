@@ -1,0 +1,241 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
+import type { SchoolData, GradeLevel, GradeData, Learner, GoogleSheetsSyncConfig } from './types';
+import {
+  loadSchoolData,
+  saveSchoolData,
+  loadGoogleSheetsConfig,
+  saveGoogleSheetsConfig
+} from './utils/storage';
+import { Header } from './components/Header';
+import { Navigation } from './components/Navigation';
+import { SchoolOverview } from './components/SchoolOverview';
+import { GradeView } from './components/GradeView';
+import { IMIPModal } from './components/IMIPModal';
+import { GoogleSheetsModal } from './components/GoogleSheetsModal';
+import { initAuth, googleSignIn, getAccessToken } from './services/firebase';
+import { syncAllDataToSpreadsheet } from './services/googleSheets';
+
+export default function App() {
+  const [schoolData, setSchoolData] = useState<SchoolData>(loadSchoolData);
+  const [currentTab, setCurrentTab] = useState<'overview' | GradeLevel>('overview');
+
+  // Google Workspace / Sheets sync state
+  const [syncConfig, setSyncConfig] = useState<GoogleSheetsSyncConfig>(loadGoogleSheetsConfig);
+  const [isSheetsModalOpen, setIsSheetsModalOpen] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Selected learner for IMIP printing modal
+  const [selectedLearnerForIMIP, setSelectedLearnerForIMIP] = useState<{
+    learner: Learner;
+    gradeData: GradeData;
+  } | null>(null);
+
+  // Debounced auto-sync timer ref
+  const autoSyncTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize Firebase Auth listener
+  useEffect(() => {
+    const unsubscribe = initAuth(
+      (user, token) => {
+        setAccessToken(token);
+        setUserEmail(user.email || 'Teacher');
+      },
+      () => {
+        setAccessToken(null);
+        setUserEmail(null);
+      }
+    );
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Save to localStorage whenever schoolData changes
+  const handleUpdateSchoolData = (updated: SchoolData) => {
+    setSchoolData(updated);
+    saveSchoolData(updated);
+
+    // Auto-sync to connected Google Sheet if configured and authorized
+    if (syncConfig.spreadsheetId && syncConfig.autoSync && accessToken) {
+      if (autoSyncTimerRef.current) {
+        clearTimeout(autoSyncTimerRef.current);
+      }
+      autoSyncTimerRef.current = setTimeout(async () => {
+        try {
+          setIsSyncing(true);
+          await syncAllDataToSpreadsheet(accessToken, syncConfig.spreadsheetId!, updated);
+          const newConfig: GoogleSheetsSyncConfig = {
+            ...syncConfig,
+            lastSyncedAt: new Date().toISOString(),
+            status: 'synced',
+            errorMessage: undefined
+          };
+          setSyncConfig(newConfig);
+          saveGoogleSheetsConfig(newConfig);
+        } catch (e: any) {
+          console.error('Auto-sync to Google Sheets failed:', e);
+        } finally {
+          setIsSyncing(false);
+        }
+      }, 2500); // 2.5s debounce
+    }
+  };
+
+  const handleUpdateGradeData = (gradeLevel: GradeLevel, updatedGradeData: GradeData) => {
+    const updated: SchoolData = {
+      ...schoolData,
+      [gradeLevel]: updatedGradeData
+    };
+    handleUpdateSchoolData(updated);
+  };
+
+  const handleManualSyncNow = async () => {
+    if (!accessToken) {
+      setIsSheetsModalOpen(true);
+      return;
+    }
+    if (!syncConfig.spreadsheetId) {
+      setIsSheetsModalOpen(true);
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      await syncAllDataToSpreadsheet(accessToken, syncConfig.spreadsheetId, schoolData);
+      const newConfig: GoogleSheetsSyncConfig = {
+        ...syncConfig,
+        lastSyncedAt: new Date().toISOString(),
+        status: 'synced',
+        errorMessage: undefined
+      };
+      setSyncConfig(newConfig);
+      saveGoogleSheetsConfig(newConfig);
+    } catch (err: any) {
+      console.error('Manual sync failed:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSignInGoogle = async () => {
+    try {
+      const res = await googleSignIn();
+      if (res) {
+        setAccessToken(res.accessToken);
+        setUserEmail(res.user.email || 'Teacher');
+      }
+    } catch (e) {
+      console.error('Sign-in failed:', e);
+    }
+  };
+
+  // Calculate overall school statistics for the Header
+  const totalSchoolLearners = Object.values(schoolData).reduce(
+    (acc, g) => acc + g.learners.length,
+    0
+  );
+
+  let totalScoreAll = 0;
+  let totalItemsAll = 0;
+  Object.values(schoolData).forEach(gData => {
+    gData.learners.forEach(l => {
+      Object.values(l.scores).forEach(sc => {
+        if (typeof sc.score === 'number' && sc.totalItems > 0) {
+          totalScoreAll += sc.score;
+          totalItemsAll += sc.totalItems;
+        }
+      });
+    });
+  });
+  const schoolAveragePct = totalItemsAll > 0 ? (totalScoreAll / totalItemsAll) * 100 : 0;
+
+  return (
+    <div className="w-full min-h-screen bg-slate-100/70 flex flex-col font-sans">
+      {/* DepEd ARAL Top Header (Full Width) */}
+      <Header
+        syncConfig={syncConfig}
+        onOpenSheetsModal={() => setIsSheetsModalOpen(true)}
+        onSyncNow={handleManualSyncNow}
+        isSyncing={isSyncing}
+        totalSchoolLearners={totalSchoolLearners}
+        schoolAveragePct={schoolAveragePct}
+        userEmail={userEmail}
+        onSignInGoogle={handleSignInGoogle}
+      />
+
+      {/* Main Top Navigation (School Overview + Grade 1 to 6 tabs) */}
+      <Navigation
+        currentTab={currentTab}
+        onSelectTab={setCurrentTab}
+        schoolData={schoolData}
+      />
+
+      {/* Main Content Area (FULL-WIDTH, NO MAX-WIDTH CONSTRAINTS) */}
+      <main className="w-full flex-1 px-3 sm:px-6 py-5">
+        {currentTab === 'overview' ? (
+          <SchoolOverview
+            schoolData={schoolData}
+            onSelectGrade={(g) => setCurrentTab(g)}
+            onOpenSyncModal={() => setIsSheetsModalOpen(true)}
+          />
+        ) : (
+          <GradeView
+            key={currentTab}
+            gradeData={schoolData[currentTab]}
+            onUpdateGradeData={(updated) => handleUpdateGradeData(currentTab, updated)}
+            onOpenIMIP={(learner) =>
+              setSelectedLearnerForIMIP({
+                learner,
+                gradeData: schoolData[currentTab]
+              })
+            }
+            onOpenSyncModal={() => setIsSheetsModalOpen(true)}
+          />
+        )}
+      </main>
+
+      {/* Individual Mathematics Intervention Plan (IMIP) Modal (A4 Print-Ready) */}
+      {selectedLearnerForIMIP && (
+        <IMIPModal
+          learner={selectedLearnerForIMIP.learner}
+          gradeData={selectedLearnerForIMIP.gradeData}
+          onClose={() => setSelectedLearnerForIMIP(null)}
+        />
+      )}
+
+      {/* Google Sheets Synchronization Modal */}
+      <GoogleSheetsModal
+        isOpen={isSheetsModalOpen}
+        onClose={() => setIsSheetsModalOpen(false)}
+        schoolData={schoolData}
+        syncConfig={syncConfig}
+        onUpdateSyncConfig={(cfg) => {
+          setSyncConfig(cfg);
+          saveGoogleSheetsConfig(cfg);
+        }}
+        accessToken={accessToken}
+        onSignInGoogle={handleSignInGoogle}
+        userEmail={userEmail}
+      />
+
+      {/* Subtle School Footer */}
+      <footer className="no-print w-full py-4 px-6 border-t border-slate-200 bg-white text-center text-xs text-slate-500">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div>
+            <strong className="text-slate-700">MLQES ARAL MATH MONITORING SITE</strong> • Manuel L. Quezon Elementary School, S.Y. 2026-2027
+          </div>
+          <div className="text-[11px] text-slate-400">
+            DepEd Academic Recovery and Accessible Learning (ARAL) Program • Key Stage 1 & 2
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
