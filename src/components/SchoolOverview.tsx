@@ -130,13 +130,12 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
       ['ARAL MATH MONITORING - CONSOLIDATED SCHOOL OVERVIEW REPORT S.Y. 2026-2027'],
       ['Date Exported:', new Date().toLocaleString()],
       [],
-      ['Grade Level', 'Teacher / Focal', 'Worksheets', 'Learners', 'Male', 'Female', 'Average %', 'Mastery', 'Progressing', 'Needs Intervention']
+      ['Grade Level', 'Worksheets', 'Learners', 'Male', 'Female', 'Average %', 'Mastery', 'Progressing', 'Needs Intervention']
     ];
 
     gradeStatsList.forEach(g => {
       rows.push([
         g.gradeLabel,
-        g.teacher,
         g.worksheets,
         g.learners,
         g.male,
@@ -149,7 +148,7 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
     });
 
     rows.push([]);
-    rows.push(['SCHOOL TOTAL', '', totalWorksheetsAll, totalLearners, totalMale, totalFemale, `${overallSchoolAverage.toFixed(2)}%`, totalMastery, totalProgressing, totalIntervention]);
+    rows.push(['SCHOOL TOTAL', totalWorksheetsAll, totalLearners, totalMale, totalFemale, `${overallSchoolAverage.toFixed(2)}%`, totalMastery, totalProgressing, totalIntervention]);
 
     exportToCSV(`MLQES_ARAL_Math_School_Overview_${new Date().toISOString().slice(0, 10)}.csv`, rows);
   };
@@ -476,7 +475,6 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
             <thead>
               <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider">
                 <th className="py-3 px-4">Grade Level</th>
-                <th className="py-3 px-4">Assigned Teacher</th>
                 <th className="py-3 px-4 text-center">Worksheets</th>
                 <th className="py-3 px-4 text-center">Enrolled</th>
                 <th className="py-3 px-4 text-center">Boys / Girls</th>
@@ -498,9 +496,6 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
                       style={{ backgroundColor: barColors[idx % barColors.length] }}
                     />
                     <span className="text-sm font-display">{g.gradeLabel}</span>
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-600 font-medium">
-                    {g.teacher || 'ARAL Math Teacher'}
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     <span className="inline-block px-2.5 py-1 bg-slate-100 rounded-lg font-mono font-bold text-slate-800 text-xs">

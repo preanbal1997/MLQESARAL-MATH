@@ -77,7 +77,8 @@ export const GradeView: React.FC<GradeViewProps> = ({
     lrn: '',
     name: '',
     gender: 'Male' as 'Male' | 'Female',
-    section: gradeData.sectionDefault || '',
+    section: '',
+    aralTeacher: gradeData.teacherName || '',
     remarks: ''
   });
 
@@ -328,6 +329,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
               name: learnerForm.name.trim(),
               gender: learnerForm.gender,
               section: learnerForm.section.trim(),
+              aralTeacher: learnerForm.aralTeacher.trim() || l.aralTeacher || gradeData.teacherName,
               remarks: learnerForm.remarks.trim()
             }
           : l
@@ -340,7 +342,8 @@ export const GradeView: React.FC<GradeViewProps> = ({
         lrn: learnerForm.lrn.trim() || `136589260${Math.floor(100 + Math.random() * 900)}`,
         name: learnerForm.name.trim(),
         gender: learnerForm.gender,
-        section: learnerForm.section.trim() || gradeData.sectionDefault,
+        section: learnerForm.section.trim() || 'General',
+        aralTeacher: learnerForm.aralTeacher.trim() || gradeData.teacherName || 'ARAL Math Teacher',
         remarks: learnerForm.remarks.trim(),
         scores: {}
       };
@@ -355,7 +358,8 @@ export const GradeView: React.FC<GradeViewProps> = ({
       lrn: '',
       name: '',
       gender: 'Male',
-      section: gradeData.sectionDefault || '',
+      section: '',
+      aralTeacher: gradeData.teacherName || '',
       remarks: ''
     });
   };
@@ -460,9 +464,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Teacher: <span className="font-semibold text-slate-700">{gradeData.teacherName || 'Assigned Focal'}</span> • 
-              Section: <span className="font-semibold text-slate-700">{gradeData.sectionDefault}</span> • 
-              Worksheets: <span className="font-bold text-sky-700">{gradeData.totalWorksheets} Total</span>
+              Worksheets: <span className="font-bold text-sky-700">{gradeData.totalWorksheets} Total</span> • Key Stage Numeracy Mastery Monitoring
             </p>
           </div>
         </div>
@@ -745,6 +747,13 @@ export const GradeView: React.FC<GradeViewProps> = ({
                               {l.gender[0]}
                             </span>
                           </div>
+                          <div className="text-[10px] text-slate-500 font-normal mt-0.5 flex items-center gap-1">
+                            <span className="font-semibold text-sky-800">Sec: {l.section || 'General'}</span>
+                            <span className="text-slate-300">•</span>
+                            <span className="truncate text-slate-600" title={`ARAL Teacher: ${l.aralTeacher || gradeData.teacherName}`}>
+                              {l.aralTeacher || gradeData.teacherName}
+                            </span>
+                          </div>
                         </td>
 
                         {/* Editable Worksheet Score & PTS Cells */}
@@ -987,7 +996,8 @@ export const GradeView: React.FC<GradeViewProps> = ({
                     lrn: `136589260${Math.floor(100 + Math.random() * 900)}`,
                     name: '',
                     gender: 'Male',
-                    section: gradeData.sectionDefault || '',
+                    section: '',
+                    aralTeacher: gradeData.teacherName || '',
                     remarks: ''
                   });
                   setIsAddLearnerOpen(true);
@@ -1008,9 +1018,10 @@ export const GradeView: React.FC<GradeViewProps> = ({
                   <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3 w-36">LRN</th>
                   <th className="p-3">Learner Full Name</th>
-                  <th className="p-3 w-24 text-center">Gender</th>
-                  <th className="p-3 w-32">Section</th>
-                  <th className="p-3 text-center w-28">Score %</th>
+                  <th className="p-3 w-20 text-center">Gender</th>
+                  <th className="p-3 w-28">Section</th>
+                  <th className="p-3 w-40">ARAL Teacher</th>
+                  <th className="p-3 text-center w-24">Score %</th>
                   <th className="p-3">Observations / Remarks</th>
                   <th className="p-3 text-right w-36">Actions</th>
                 </tr>
@@ -1018,7 +1029,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {filteredLearners.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-6 text-center text-slate-400">
+                    <td colSpan={9} className="p-6 text-center text-slate-400">
                       No learners match the current filter.
                     </td>
                   </tr>
@@ -1046,7 +1057,10 @@ export const GradeView: React.FC<GradeViewProps> = ({
                         </span>
                       </td>
                       <td className="p-3 text-slate-700 font-medium">
-                        {learner.section || gradeData.sectionDefault}
+                        {learner.section || 'General'}
+                      </td>
+                      <td className="p-3 text-sky-900 font-semibold">
+                        {learner.aralTeacher || gradeData.teacherName || 'ARAL Math Teacher'}
                       </td>
                       <td className="p-3 text-center">
                         <span
@@ -1080,7 +1094,8 @@ export const GradeView: React.FC<GradeViewProps> = ({
                                 lrn: learner.lrn,
                                 name: learner.name,
                                 gender: learner.gender,
-                                section: learner.section || gradeData.sectionDefault,
+                                section: learner.section || '',
+                                aralTeacher: learner.aralTeacher || gradeData.teacherName || '',
                                 remarks: learner.remarks || ''
                               });
                               setIsAddLearnerOpen(true);
@@ -1315,15 +1330,33 @@ export const GradeView: React.FC<GradeViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Section:</label>
+                  <label className="block font-bold text-slate-700 mb-1">Section: *</label>
                   <input
                     type="text"
-                    placeholder="e.g. Mabini"
+                    required
+                    placeholder="e.g. Mabini, Rizal..."
                     value={learnerForm.section}
                     onChange={e => setLearnerForm({ ...learnerForm, section: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  ARAL Teacher's Name: *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Maria Elena Santos"
+                  value={learnerForm.aralTeacher}
+                  onChange={e => setLearnerForm({ ...learnerForm, aralTeacher: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-semibold"
+                />
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  The ARAL Teacher's name encoded here will flash directly on this learner's printable Individual Mathematics Intervention Plan (IMIP).
+                </p>
               </div>
 
               <div>

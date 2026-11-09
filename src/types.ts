@@ -13,6 +13,7 @@ export interface Learner {
   name: string;
   gender: Gender;
   section: string;
+  aralTeacher?: string;
   remarks?: string;
   scores: Record<number, ScoreValue>;
 }

@@ -22,6 +22,7 @@ interface HeaderProps {
   schoolAveragePct: number;
   userEmail?: string | null;
   onSignInGoogle: () => void;
+  onSignOut?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,7 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   totalSchoolLearners,
   schoolAveragePct,
   userEmail,
-  onSignInGoogle
+  onSignInGoogle,
+  onSignOut
 }) => {
   return (
     <header className="no-print w-full bg-gradient-to-r from-sky-600 via-sky-500 to-emerald-600 text-white shadow-lg border-b-4 border-amber-400">
@@ -55,15 +57,27 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
           {userEmail ? (
-            <span className="text-[11px] text-emerald-200 font-medium">
-              Teacher: {userEmail}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-emerald-200 font-medium flex items-center gap-1.5 bg-black/20 px-2 py-0.5 rounded-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Teacher: <strong className="text-white">{userEmail}</strong></span>
+              </span>
+              {onSignOut && (
+                <button
+                  onClick={onSignOut}
+                  className="text-[10px] text-sky-200 hover:text-amber-300 underline cursor-pointer"
+                  title="Switch or Sign Out"
+                >
+                  (Switch)
+                </button>
+              )}
+            </div>
           ) : (
             <button
               onClick={onSignInGoogle}
-              className="hover:underline text-[11px] text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
+              className="hover:underline text-[11px] text-amber-300 font-bold flex items-center gap-1.5 cursor-pointer bg-white/10 px-2.5 py-1 rounded-lg border border-white/20"
             >
-              Sign in with Google
+              Sign in with Email
             </button>
           )}
         </div>

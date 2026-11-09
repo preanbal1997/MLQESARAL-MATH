@@ -127,7 +127,7 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({ learner, gradeData, onClos
           </div>
 
           {/* Learner Information Box */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-300 p-3 rounded-lg text-xs mb-5 print:bg-transparent">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-slate-50 border border-slate-300 p-3 rounded-lg text-xs mb-5 print:bg-transparent">
             <div>
               <span className="text-slate-500 block uppercase text-[10px] font-bold">Learner Name:</span>
               <span className="font-extrabold text-sm text-slate-900">{learner.name}</span>
@@ -138,7 +138,13 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({ learner, gradeData, onClos
             </div>
             <div>
               <span className="text-slate-500 block uppercase text-[10px] font-bold">Grade & Section:</span>
-              <span className="font-bold text-slate-800">Grade {gradeData.grade} - {learner.section || gradeData.sectionDefault}</span>
+              <span className="font-bold text-slate-800">Grade {gradeData.grade} - {learner.section || 'General'}</span>
+            </div>
+            <div>
+              <span className="text-slate-500 block uppercase text-[10px] font-bold">ARAL Teacher:</span>
+              <span className="font-extrabold text-sky-900 bg-sky-100/70 px-1.5 py-0.5 rounded border border-sky-300 print:bg-transparent print:border-none print:p-0">
+                {learner.aralTeacher || gradeData.teacherName || 'ARAL Math Teacher'}
+              </span>
             </div>
             <div>
               <span className="text-slate-500 block uppercase text-[10px] font-bold">Gender / Date:</span>
@@ -286,7 +292,7 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({ learner, gradeData, onClos
             <div className="flex flex-col items-center">
               <div className="w-56 border-b-2 border-slate-800 pb-1 mb-1">
                 <span className="font-bold text-slate-900 uppercase">
-                  {gradeData.teacherName || 'ARAL Math Teacher'}
+                  {learner.aralTeacher || gradeData.teacherName || 'ARAL Math Teacher'}
                 </span>
               </div>
               <div className="text-[11px] font-semibold text-slate-700">Prepared by:</div>

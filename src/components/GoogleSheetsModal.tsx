@@ -23,7 +23,7 @@ interface GoogleSheetsModalProps {
   syncConfig: GoogleSheetsSyncConfig;
   onUpdateSyncConfig: (config: GoogleSheetsSyncConfig) => void;
   accessToken: string | null;
-  onSignInGoogle: () => Promise<void>;
+  onSignInGoogle: () => void | Promise<void>;
   userEmail?: string | null;
 }
 

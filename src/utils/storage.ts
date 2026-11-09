@@ -119,6 +119,7 @@ export function createDefaultSchoolData(): SchoolData {
     const rawLearners = INITIAL_LEARNERS_BY_GRADE[g] || [];
     const learners: Learner[] = rawLearners.map((raw, idx) => ({
       ...raw,
+      aralTeacher: teacher,
       scores: generateInitialScores(totalWs, defaultItems, idx)
     }));
 

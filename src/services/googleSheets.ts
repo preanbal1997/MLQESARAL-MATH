@@ -250,8 +250,8 @@ export async function syncAllDataToSpreadsheet(
     ];
     const blankRow: string[] = [];
 
-    // Table Column Headers: No, LRN, Full Name, Gender, Section, WS 1 ... WS N, Total Score, Total Items, Overall Percentage, Status, Remarks
-    const colHeaders: string[] = ['No.', 'LRN', 'Learner Name', 'Gender', 'Section'];
+    // Table Column Headers: No, LRN, Full Name, Gender, Section, ARAL Teacher, WS 1 ... WS N, Total Score, Total Items, Overall Percentage, Status, Remarks
+    const colHeaders: string[] = ['No.', 'LRN', 'Learner Name', 'Gender', 'Section', 'ARAL Teacher'];
     for (let w = 1; w <= totalWs; w++) {
       const config = gData.worksheetConfigs.find(c => c.number === w);
       const defItems = config?.defaultTotalItems || 30;
@@ -268,7 +268,8 @@ export async function syncAllDataToSpreadsheet(
         l.lrn || '',
         l.name,
         l.gender,
-        l.section || gData.sectionDefault || ''
+        l.section || 'General',
+        l.aralTeacher || gData.teacherName || 'ARAL Math Teacher'
       ];
 
       for (let w = 1; w <= totalWs; w++) {

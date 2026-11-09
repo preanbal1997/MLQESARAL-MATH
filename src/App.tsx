@@ -17,7 +17,8 @@ import { SchoolOverview } from './components/SchoolOverview';
 import { GradeView } from './components/GradeView';
 import { IMIPModal } from './components/IMIPModal';
 import { GoogleSheetsModal } from './components/GoogleSheetsModal';
-import { initAuth, googleSignIn, getAccessToken } from './services/firebase';
+import { SignInModal } from './components/SignInModal';
+import { initAuth, googleSignIn, getAccessToken, logout } from './services/firebase';
 import { syncAllDataToSpreadsheet } from './services/googleSheets';
 
 export default function App() {
@@ -27,8 +28,11 @@ export default function App() {
   // Google Workspace / Sheets sync state
   const [syncConfig, setSyncConfig] = useState<GoogleSheetsSyncConfig>(loadGoogleSheetsConfig);
   const [isSheetsModalOpen, setIsSheetsModalOpen] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    return localStorage.getItem('mlqes_user_email') || 'preanbal1997@gmail.com';
+  });
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Selected learner for IMIP printing modal
@@ -45,11 +49,15 @@ export default function App() {
     const unsubscribe = initAuth(
       (user, token) => {
         setAccessToken(token);
-        setUserEmail(user.email || 'Teacher');
+        if (user.email) {
+          setUserEmail(user.email);
+          localStorage.setItem('mlqes_user_email', user.email);
+        }
       },
       () => {
-        setAccessToken(null);
-        setUserEmail(null);
+        // If Firebase token expires, preserve userEmail from localStorage so email stays active
+        const savedEmail = localStorage.getItem('mlqes_user_email');
+        if (savedEmail) setUserEmail(savedEmail);
       }
     );
     return () => {
@@ -124,12 +132,28 @@ export default function App() {
     }
   };
 
+  const handleSignInWithEmail = (email: string, teacherName?: string) => {
+    setUserEmail(email);
+    localStorage.setItem('mlqes_user_email', email);
+    if (teacherName) {
+      localStorage.setItem('mlqes_teacher_name', teacherName);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setUserEmail(null);
+    localStorage.removeItem('mlqes_user_email');
+    await logout().catch(() => {});
+  };
+
   const handleSignInGoogle = async () => {
     try {
       const res = await googleSignIn();
       if (res) {
         setAccessToken(res.accessToken);
-        setUserEmail(res.user.email || 'Teacher');
+        const email = res.user.email || 'Teacher';
+        setUserEmail(email);
+        localStorage.setItem('mlqes_user_email', email);
       }
     } catch (e) {
       console.error('Sign-in failed:', e);
@@ -167,7 +191,8 @@ export default function App() {
         totalSchoolLearners={totalSchoolLearners}
         schoolAveragePct={schoolAveragePct}
         userEmail={userEmail}
-        onSignInGoogle={handleSignInGoogle}
+        onSignInGoogle={() => setIsSignInModalOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Top Navigation (School Overview + Grade 1 to 6 tabs) */}
@@ -221,8 +246,17 @@ export default function App() {
           saveGoogleSheetsConfig(cfg);
         }}
         accessToken={accessToken}
-        onSignInGoogle={handleSignInGoogle}
+        onSignInGoogle={() => setIsSignInModalOpen(true)}
         userEmail={userEmail}
+      />
+
+      {/* Teacher Email Sign-In Modal */}
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+        currentEmail={userEmail}
+        onSignInWithEmail={handleSignInWithEmail}
+        onGooglePopupSignIn={handleSignInGoogle}
       />
 
       {/* Subtle School Footer */}
