@@ -46,7 +46,7 @@
   }
 
   @page {
-    size: 11in 13in portrait;
-    margin: 0.35in;
+    size: A4 portrait;
+    margin: 8mm 10mm;
   }
 }

@@ -9,7 +9,8 @@ import {
   Award,
   Sparkles,
   School,
-  Calculator
+  Calculator,
+  Lock
 } from 'lucide-react';
 import type { GoogleSheetsSyncConfig } from '../types';
 
@@ -23,6 +24,7 @@ interface HeaderProps {
   userEmail?: string | null;
   onSignInGoogle: () => void;
   onSignOut?: () => void;
+  onLockSite?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,7 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
   schoolAveragePct,
   userEmail,
   onSignInGoogle,
-  onSignOut
+  onSignOut,
+  onLockSite
 }) => {
   return (
     <header className="no-print w-full bg-gradient-to-r from-sky-600 via-sky-500 to-emerald-600 text-white shadow-lg border-b-4 border-amber-400">
@@ -62,13 +65,14 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Teacher: <strong className="text-white">{userEmail}</strong></span>
               </span>
-              {onSignOut && (
+              {onLockSite && (
                 <button
-                  onClick={onSignOut}
-                  className="text-[10px] text-sky-200 hover:text-amber-300 underline cursor-pointer"
-                  title="Switch or Sign Out"
+                  onClick={onLockSite}
+                  className="text-[10px] text-amber-300 hover:text-white bg-black/25 hover:bg-black/40 px-2 py-0.5 rounded border border-white/20 transition-all cursor-pointer flex items-center gap-1 font-bold"
+                  title="Lock site with password"
                 >
-                  (Switch)
+                  <Lock className="w-3 h-3" />
+                  <span>Lock Site</span>
                 </button>
               )}
             </div>

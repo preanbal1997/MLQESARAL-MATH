@@ -722,7 +722,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
                           <button
                             onClick={() => onOpenIMIP(l)}
                             className="inline-flex items-center gap-1 px-1.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-md shadow-2xs cursor-pointer text-[10px] transition-all"
-                            title="Auto-download and print 11x13 Individual Mathematics Intervention Plan (IMIP) PDF"
+                            title="Open & Print Individual Mathematics Intervention Plan (IMIP) A4 PDF"
                           >
                             <FileDown className="w-3 h-3 text-slate-950 shrink-0" />
                             <span>IMIP</span>
@@ -1084,7 +1084,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
                           <button
                             onClick={() => onOpenIMIP(learner)}
                             className="p-1.5 hover:bg-amber-100 text-amber-700 rounded-lg transition-colors cursor-pointer"
-                            title="Auto-download & Print IMIP (11x13 PDF)"
+                            title="Open & Print IMIP (A4 PDF)"
                           >
                             <FileDown className="w-4 h-4" />
                           </button>

@@ -18,10 +18,16 @@ import { GradeView } from './components/GradeView';
 import { IMIPModal } from './components/IMIPModal';
 import { GoogleSheetsModal } from './components/GoogleSheetsModal';
 import { SignInModal } from './components/SignInModal';
+import { WelcomePage } from './components/WelcomePage';
 import { initAuth, googleSignIn, getAccessToken, logout } from './services/firebase';
 import { syncAllDataToSpreadsheet } from './services/googleSheets';
 
 export default function App() {
+  // Password protection: Teacher will not access the site unless they encode 136644mlqesaralmath
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem('mlqes_site_unlocked') === 'true';
+  });
+
   const [schoolData, setSchoolData] = useState<SchoolData>(loadSchoolData);
   const [currentTab, setCurrentTab] = useState<'overview' | GradeLevel>('overview');
 
@@ -140,6 +146,20 @@ export default function App() {
     }
   };
 
+  const handleUnlock = (email?: string) => {
+    setIsUnlocked(true);
+    sessionStorage.setItem('mlqes_site_unlocked', 'true');
+    if (email) {
+      setUserEmail(email);
+      localStorage.setItem('mlqes_user_email', email);
+    }
+  };
+
+  const handleLockSite = () => {
+    sessionStorage.removeItem('mlqes_site_unlocked');
+    setIsUnlocked(false);
+  };
+
   const handleSignOut = async () => {
     setUserEmail(null);
     localStorage.removeItem('mlqes_user_email');
@@ -159,6 +179,16 @@ export default function App() {
       console.error('Sign-in failed:', e);
     }
   };
+
+  // If site is locked, render the Welcome Home Page first
+  if (!isUnlocked) {
+    return (
+      <WelcomePage
+        onUnlock={handleUnlock}
+        defaultEmail={userEmail}
+      />
+    );
+  }
 
   // Calculate overall school statistics for the Header
   const totalSchoolLearners = Object.values(schoolData).reduce(
@@ -193,6 +223,7 @@ export default function App() {
         userEmail={userEmail}
         onSignInGoogle={() => setIsSignInModalOpen(true)}
         onSignOut={handleSignOut}
+        onLockSite={handleLockSite}
       />
 
       {/* Main Top Navigation (School Overview + Grade 1 to 6 tabs) */}

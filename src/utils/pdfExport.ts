@@ -2,10 +2,10 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 /**
- * Exports an HTML element to an 11x13 inch PDF document.
- * 11x13 inches (792pt x 936pt / 279.4mm x 330.2mm)
+ * Exports an HTML element to an A4 PDF document.
+ * A4 standard size: 210mm x 297mm
  */
-export async function exportElementTo11x13PDF(
+export async function exportElementToA4PDF(
   element: HTMLElement,
   filename: string
 ): Promise<void> {
@@ -19,28 +19,28 @@ export async function exportElementTo11x13PDF(
 
   const imgData = canvas.toDataURL('image/png');
 
-  // 11 in x 13 in
+  // A4 portrait
   const pdf = new jsPDF({
     orientation: 'portrait',
-    unit: 'in',
-    format: [11, 13]
+    unit: 'mm',
+    format: 'a4'
   });
 
-  const pdfWidth = 11;
-  const pdfHeight = 13;
-  const margin = 0.35; // 0.35 inch margins
+  const pdfWidth = 210;
+  const pdfHeight = 297;
+  const margin = 8; // 8mm margin
   const availWidth = pdfWidth - margin * 2;
   const availHeight = pdfHeight - margin * 2;
 
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
-  // Calculate proportional scaling to fit neatly within 11x13 available dimensions
-  const scale = Math.min(availWidth / (canvasWidth / 96), availHeight / (canvasHeight / 96));
-  const finalWidth = (canvasWidth / 96) * scale;
-  const finalHeight = (canvasHeight / 96) * scale;
+  // Scale to fit within A4 printable area
+  const scale = Math.min(availWidth / canvasWidth, availHeight / canvasHeight);
+  const finalWidth = canvasWidth * scale;
+  const finalHeight = canvasHeight * scale;
 
-  // Center horizontally within margins
+  // Center horizontally
   const x = margin + (availWidth - finalWidth) / 2;
   const y = margin;
 
