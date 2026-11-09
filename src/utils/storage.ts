@@ -137,27 +137,18 @@ export function createDefaultSchoolData(): SchoolData {
   return schoolData as SchoolData;
 }
 
+// Fresh installations start with an empty learner register; never migrate demo/local records.
+export function createEmptySchoolData(): SchoolData {
+  const data = createDefaultSchoolData();
+  (Object.keys(data) as GradeLevel[]).forEach(grade => { data[grade] = { ...data[grade], learners: [] }; });
+  return data;
+}
 const STORAGE_KEY = 'mlqes_aral_math_data_v1';
 const SHEETS_CONFIG_KEY = 'mlqes_aral_sheets_config_v1';
 
 export function loadSchoolData(): SchoolData {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Validate that all grades 1-6 are present
-      const grades: GradeLevel[] = ['1', '2', '3', '4', '5', '6'];
-      const hasAllGrades = grades.every(g => parsed[g] && Array.isArray(parsed[g].learners));
-      if (hasAllGrades) {
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.error('Error loading school data from localStorage:', e);
-  }
-  const defaultData = createDefaultSchoolData();
-  saveSchoolData(defaultData);
-  return defaultData;
+  // Learner records are now sourced exclusively from Firestore.
+  return createEmptySchoolData();
 }
 
 export function saveSchoolData(data: SchoolData): void {
