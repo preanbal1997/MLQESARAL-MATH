@@ -12,6 +12,7 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const auth: Auth = getAuth(app);
+export { app };
 
 const provider = new GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/spreadsheets');
@@ -29,12 +30,7 @@ export const initAuth = (
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
-      } else if (!isSigningIn) {
-        // Token might not be in credential after reload without interactive sign in
-        if (onAuthFailure) onAuthFailure();
-      }
+      if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken || '');
     } else {
       cachedAccessToken = null;
       if (onAuthFailure) onAuthFailure();
