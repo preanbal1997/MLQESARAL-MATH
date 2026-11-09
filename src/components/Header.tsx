@@ -77,9 +77,9 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative group shrink-0">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-1 shadow-md border-2 border-amber-400 overflow-hidden flex items-center justify-center">
               <img
-                src="/assets/aistudio/images__1__290aaf3a.jpg"
-                alt="DepEd ARAL Math Logo"
-                className="w-full h-full object-cover rounded-xl"
+                src="/assets/aistudio/Untitled_design__2__40f193e5.png"
+                alt="Manuel L. Quezon Elementary School Logo"
+                className="w-full h-full object-contain"
               />
             </div>
             <div className="absolute -bottom-1 -right-1 bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-white uppercase shadow-sm">

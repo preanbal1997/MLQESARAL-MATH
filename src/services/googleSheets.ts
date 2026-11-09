@@ -43,9 +43,19 @@ export async function createARALSpreadsheet(
   const grades: GradeLevel[] = ['1', '2', '3', '4', '5', '6'];
 
   const sheetsConfig = [
-    { properties: { title: 'School Overview', index: 0 } },
+    {
+      properties: {
+        title: 'School Overview',
+        index: 0,
+        gridProperties: { rowCount: 100, columnCount: 30 }
+      }
+    },
     ...grades.map((g, idx) => ({
-      properties: { title: `Grade ${g}`, index: idx + 1 }
+      properties: {
+        title: `Grade ${g}`,
+        index: idx + 1,
+        gridProperties: { rowCount: 150, columnCount: 80 }
+      }
     }))
   ];
 
@@ -79,7 +89,7 @@ export async function createARALSpreadsheet(
 }
 
 /**
- * Syncs school data into the given Google Sheet
+ * Syncs school data into the given Google Sheet with automatic grid resizing and tab provisioning
  */
 export async function syncAllDataToSpreadsheet(
   accessToken: string,
@@ -87,6 +97,75 @@ export async function syncAllDataToSpreadsheet(
   schoolData: SchoolData
 ): Promise<void> {
   const grades: GradeLevel[] = ['1', '2', '3', '4', '5', '6'];
+
+  // Check existing spreadsheet metadata
+  try {
+    const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    if (metaRes.ok) {
+      const meta = await metaRes.json();
+      const existingSheets = (meta.sheets || []).map((s: any) => ({
+        id: s.properties?.sheetId,
+        title: s.properties?.title,
+        cols: s.properties?.gridProperties?.columnCount || 26
+      }));
+
+      const requests: any[] = [];
+
+      // Ensure School Overview exists
+      if (!existingSheets.some((s: any) => s.title === 'School Overview')) {
+        requests.push({
+          addSheet: {
+            properties: {
+              title: 'School Overview',
+              gridProperties: { rowCount: 100, columnCount: 30 }
+            }
+          }
+        });
+      }
+
+      // Ensure each Grade sheet exists and has sufficient columns
+      for (const g of grades) {
+        const expectedTitle = `Grade ${g}`;
+        const found = existingSheets.find((s: any) => s.title === expectedTitle);
+        if (!found) {
+          requests.push({
+            addSheet: {
+              properties: {
+                title: expectedTitle,
+                gridProperties: { rowCount: 150, columnCount: 80 }
+              }
+            }
+          });
+        } else if (found.cols < 80) {
+          requests.push({
+            updateSheetProperties: {
+              properties: {
+                sheetId: found.id,
+                gridProperties: { columnCount: 80 }
+              },
+              fields: 'gridProperties.columnCount'
+            }
+          });
+        }
+      }
+
+      if (requests.length > 0) {
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ requests })
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Metadata verification warning (continuing sync):', err);
+  }
 
   // 1. Prepare Overview Rows
   const overviewRows: (string | number)[][] = [
@@ -150,7 +229,7 @@ export async function syncAllDataToSpreadsheet(
   // 2. Prepare Grade Data for each grade sheet
   const dataPayload: { range: string; majorDimension: string; values: (string | number)[][] }[] = [
     {
-      range: `'School Overview'!A1:J${overviewRows.length}`,
+      range: `'School Overview'!A1`,
       majorDimension: 'ROWS',
       values: overviewRows
     }
@@ -213,7 +292,7 @@ export async function syncAllDataToSpreadsheet(
     });
 
     dataPayload.push({
-      range: `'Grade ${g}'!A1:ZZ${learnerRows.length + 5}`,
+      range: `'Grade ${g}'!A1`,
       majorDimension: 'ROWS',
       values: learnerRows
     });
