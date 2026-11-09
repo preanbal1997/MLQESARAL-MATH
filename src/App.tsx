@@ -8,6 +8,7 @@ import type { SchoolData, GradeLevel, GradeData, Learner, GoogleSheetsSyncConfig
 import {
   loadSchoolData,
   saveSchoolData,
+  createEmptySchoolData,
   loadGoogleSheetsConfig,
   saveGoogleSheetsConfig
 } from './utils/storage';
@@ -21,6 +22,7 @@ import { SignInModal } from './components/SignInModal';
 import { WelcomePage } from './components/WelcomePage';
 import { initAuth, googleSignIn, getAccessToken, logout } from './services/firebase';
 import { syncAllDataToSpreadsheet } from './services/googleSheets';
+import { watchSchoolData, saveGradeToFirestore, AUTHORIZED_TEACHER_EMAIL } from './services/firestore';
 
 export default function App() {
   // Password protection: Teacher will not access the site unless they encode 136644mlqesaralmath
@@ -28,7 +30,9 @@ export default function App() {
     return sessionStorage.getItem('mlqes_site_unlocked') === 'true';
   });
 
-  const [schoolData, setSchoolData] = useState<SchoolData>(loadSchoolData);
+  const [schoolData, setSchoolData] = useState<SchoolData>(createEmptySchoolData);
+  const [cloudReady, setCloudReady] = useState(false);
+  const [cloudMessage, setCloudMessage] = useState('Sign in with the authorized Google account to enable cloud sync.');
   const [currentTab, setCurrentTab] = useState<'overview' | GradeLevel>('overview');
 
   // Google Workspace / Sheets sync state
@@ -50,31 +54,52 @@ export default function App() {
   // Debounced auto-sync timer ref
   const autoSyncTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize Firebase Auth listener
+  // Firestore is the source of truth; legacy browser records are not migrated.
   useEffect(() => {
-    const unsubscribe = initAuth(
-      (user, token) => {
-        setAccessToken(token);
-        if (user.email) {
-          setUserEmail(user.email);
-          localStorage.setItem('mlqes_user_email', user.email);
-        }
-      },
-      () => {
-        // If Firebase token expires, preserve userEmail from localStorage so email stays active
-        const savedEmail = localStorage.getItem('mlqes_user_email');
-        if (savedEmail) setUserEmail(savedEmail);
+    let stopWatching: (() => void) | undefined;
+    const unsubscribe = initAuth((user, token) => {
+      setAccessToken(token || null);
+      const email = (user.email || '').toLowerCase();
+      setUserEmail(user.email || null);
+      if (email !== AUTHORIZED_TEACHER_EMAIL) {
+        setCloudReady(false);
+        setCloudMessage('Access denied. Sign in using mlqes.caloocan101@gmail.com.');
+        stopWatching?.();
+        return;
       }
-    );
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+      setCloudMessage('Connecting to the shared school database…');
+      stopWatching?.();
+      stopWatching = watchSchoolData(data => {
+        setSchoolData(data);
+        saveSchoolData(data);
+        setCloudReady(true);
+        setCloudMessage('Connected — changes sync across devices automatically.');
+      }, error => {
+        console.error('Firestore connection failed:', error);
+        setCloudReady(false);
+        setCloudMessage('Cloud connection failed. Check Firestore rules and sign-in, then reload.');
+      });
+    }, () => {
+      stopWatching?.();
+      stopWatching = undefined;
+      setCloudReady(false);
+      setAccessToken(null);
+      setCloudMessage('Sign in with mlqes.caloocan101@gmail.com to connect to the shared database.');
+    });
+    return () => { stopWatching?.(); unsubscribe?.(); };
   }, []);
 
   // Save to localStorage whenever schoolData changes
   const handleUpdateSchoolData = (updated: SchoolData) => {
     setSchoolData(updated);
     saveSchoolData(updated);
+    if (cloudReady) {
+      const changed = (Object.keys(updated) as GradeLevel[]).find(g => updated[g] !== schoolData[g]);
+      if (changed) saveGradeToFirestore(changed, updated[changed]).catch(error => {
+        console.error('Firestore save failed:', error);
+        setCloudMessage('Save failed. The latest change is not in the shared database yet.');
+      });
+    }
 
     // Auto-sync to connected Google Sheet if configured and authorized
     if (syncConfig.spreadsheetId && syncConfig.autoSync && accessToken) {
@@ -103,6 +128,7 @@ export default function App() {
   };
 
   const handleUpdateGradeData = (gradeLevel: GradeLevel, updatedGradeData: GradeData) => {
+    if (!cloudReady) { window.alert('Please sign in with mlqes.caloocan101@gmail.com before editing learner records.'); return; }
     const updated: SchoolData = {
       ...schoolData,
       [gradeLevel]: updatedGradeData
@@ -225,6 +251,8 @@ export default function App() {
         onSignOut={handleSignOut}
         onLockSite={handleLockSite}
       />
+
+      <div className={cloudReady ? 'px-4 py-2 text-xs bg-emerald-50 text-emerald-800 border-b border-emerald-100' : 'px-4 py-2 text-xs bg-amber-50 text-amber-800 border-b border-amber-100'}>{cloudMessage}</div>
 
       {/* Main Top Navigation (School Overview + Grade 1 to 6 tabs) */}
       <Navigation
