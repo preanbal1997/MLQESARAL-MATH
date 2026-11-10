@@ -62,7 +62,7 @@ export default function App() {
       setUserEmail(user.email || null);
       if (email !== AUTHORIZED_TEACHER_EMAIL) {
         setCloudReady(false);
-        setCloudMessage('Access denied. Sign in using preciousangela.bal@deped.gov.ph.');
+        setCloudMessage('Access denied. Sign in using preciousangela.bal@o365.deped.gov.ph.');
         stopWatching?.();
         return;
       }
@@ -83,7 +83,7 @@ export default function App() {
       stopWatching = undefined;
       setCloudReady(false);
       setAccessToken(null);
-      setCloudMessage('Sign in with preciousangela.bal@deped.gov.ph to connect to the shared database.');
+      setCloudMessage('Sign in with preciousangela.bal@o365.deped.gov.ph to connect to the shared database.');
     });
     return () => { stopWatching?.(); unsubscribe?.(); };
   }, []);
@@ -127,7 +127,7 @@ export default function App() {
   };
 
   const handleUpdateGradeData = (gradeLevel: GradeLevel, updatedGradeData: GradeData) => {
-    if (!cloudReady) { window.alert('Please sign in with preciousangela.bal@deped.gov.ph before editing learner records.'); return; }
+    if (!cloudReady) { window.alert('Please sign in with preciousangela.bal@o365.deped.gov.ph before editing learner records.'); return; }
     const updated: SchoolData = {
       ...schoolData,
       [gradeLevel]: updatedGradeData
@@ -196,8 +196,8 @@ export default function App() {
           await logout();
           setUserEmail(null);
           setAccessToken(null);
-          setCloudMessage('Access denied. Please choose preciousangela.bal@deped.gov.ph in the Google account popup.');
-          throw new Error('Only preciousangela.bal@deped.gov.ph is authorized to edit learner records.');
+          setCloudMessage('Access denied. Please choose preciousangela.bal@o365.deped.gov.ph in the Google account popup.');
+          throw new Error('Only preciousangela.bal@o365.deped.gov.ph is authorized to edit learner records.');
         }
         setUserEmail(res.user.email);
         localStorage.setItem('mlqes_user_email', res.user.email || '');
