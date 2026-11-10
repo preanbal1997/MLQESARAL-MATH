@@ -212,7 +212,7 @@ export default function App() {
     return (
       <WelcomePage
         onUnlock={handleUnlock}
-        defaultEmail={userEmail}
+        defaultEmail={AUTHORIZED_TEACHER_EMAIL}
       />
     );
   }
