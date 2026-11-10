@@ -3,7 +3,7 @@ import { app } from './firebase';
 import type { GradeData, GradeLevel, SchoolData } from '../types';
 import { createEmptySchoolData } from '../utils/storage';
 
-export const AUTHORIZED_TEACHER_EMAIL = 'preciousangela.bal@o365.deped.gov.ph';
+export const AUTHORIZED_TEACHER_EMAIL = 'preanbal1997@gmail.com';
 const db = getFirestore(app);
 const gradesCollection = collection(db, 'schools', 'mlqes_aral_math', 'grades');
 const GRADES: GradeLevel[] = ['1','2','3','4','5','6'];
