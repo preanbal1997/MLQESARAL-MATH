@@ -16,7 +16,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   onSignInWithEmail,
   onGooglePopupSignIn
 }) => {
-  const [email, setEmail] = useState(currentEmail || 'preciousangela.bal@o365.deped.gov.ph');
+  const [email, setEmail] = useState(currentEmail || 'preanbal1997@gmail.com');
   const [teacherName, setTeacherName] = useState('');
   const [isPopupLoading, setIsPopupLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
