@@ -15,7 +15,9 @@
 
 @media print {
   html, body {
-    height: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
@@ -40,21 +42,47 @@
     display: block !important;
   }
 
+  .imip-modal-backdrop {
+    position: static !important;
+    inset: auto !important;
+    overflow: visible !important;
+    height: auto !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
   .print-container {
     display: block !important;
     position: static !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-height: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
+    background: #ffffff !important;
     box-shadow: none !important;
     border: none !important;
+    overflow: visible !important;
+  }
+
+  .print-container table {
+    page-break-inside: auto !important;
+  }
+
+  .print-container thead {
+    display: table-header-group !important;
+  }
+
+  .print-container tr,
+  .imip-keep-together {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
   @page {
-    size: A4 portrait;
-    margin: 6mm 8mm;
+    size: A4 landscape;
+    margin: 8mm 10mm;
   }
 }

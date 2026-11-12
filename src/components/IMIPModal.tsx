@@ -43,13 +43,13 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
   const [showScoresReference, setShowScoresReference] = useState(false);
 
   const cleanLearnerName = learner.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-  const pdfFileName = `IMIP_${cleanLearnerName}_Grade_${gradeData.grade}_A4.pdf`;
+  const pdfFileName = `IMIP_${cleanLearnerName}_Grade_${gradeData.grade}_A4_Landscape.pdf`;
 
   // Generate domain-specific intervention details accurately calibrated per Grade Level (Grades 1 to 6)
   const generateDefaultPlan = (): Record<string, DomainPlan> => {
     const pct = stats.percentage;
     const isNeedsIntervention = pct < 75;
-    const isProgressing = pct >= 75 && pct < 85;
+    const isProgressing = pct >= 75 && pct < 90;
     const grade = gradeData.grade;
 
     // Grade-level specific curriculum definitions for DepEd Elementary Mathematics
@@ -615,11 +615,45 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
 
   const domains = ['Number and Algebra', 'Measurement and Geometry', 'Data and Probability'];
 
+  const getDescriptorRangeLabel = (status: string) => {
+    switch (status) {
+      case 'Highly Proficient':
+        return '90% - 100%';
+      case 'Proficient':
+        return '75% - 89%';
+      case 'Nearly Proficient':
+        return '50% - 74%';
+      case 'Low Proficient':
+        return '30% - 49%';
+      case 'Not Proficient':
+        return 'Below 30%';
+      default:
+        return 'No Scores Yet';
+    }
+  };
+
+  const getDescriptorBadgeClass = (status: string) => {
+    switch (status) {
+      case 'Highly Proficient':
+        return 'bg-emerald-100 text-emerald-900 border-emerald-500';
+      case 'Proficient':
+        return 'bg-sky-100 text-sky-900 border-sky-500';
+      case 'Nearly Proficient':
+        return 'bg-amber-100 text-amber-900 border-amber-500';
+      case 'Low Proficient':
+        return 'bg-orange-100 text-orange-900 border-orange-500';
+      case 'Not Proficient':
+        return 'bg-rose-100 text-rose-900 border-rose-500';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-400';
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 flex flex-col items-center justify-start p-0 sm:p-3 backdrop-blur-xs">
+    <div className="imip-modal-backdrop fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 flex flex-col items-center justify-start p-0 sm:p-3 backdrop-blur-xs">
       <div
         className={`relative w-full bg-slate-100 ${
-          isFullSize ? 'max-w-[98vw] min-h-screen' : 'max-w-5xl my-2 rounded-2xl'
+          isFullSize ? 'max-w-[98vw] min-h-screen' : 'max-w-6xl my-2 rounded-2xl'
         } shadow-2xl border border-slate-300 flex flex-col print-container transition-all`}
       >
         {/* Sticky Modal Top Bar (Always in view while scrolling, hidden in print) */}
@@ -634,7 +668,7 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
                   Individual Mathematics Intervention Plan (IMIP) Report
                 </span>
                 <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">
-                  Official DepEd Template • A4
+                  Official DepEd Template • A4 Landscape
                 </span>
               </div>
               <p className="text-[11px] text-sky-100">
@@ -764,100 +798,135 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
           </div>
         )}
 
-        {/* Document Viewport - Full View with Whole Page Rendered */}
-        <div className="w-full flex-1 p-2 sm:p-6 lg:p-8 flex justify-center bg-slate-200/60 overflow-x-auto">
-          {/* Official Printable Sheet - Formatted to exactly match the attached IMIP PDF template */}
+        {/* Document Viewport - A4 Landscape Full View (Auto-flows to Page 2 if content exceeds 1 page) */}
+        <div className="w-full flex-1 p-2 sm:p-5 lg:p-6 flex justify-center bg-slate-200/60 overflow-x-auto print:p-0 print:bg-white print:block">
+          {/* Official Printable Sheet - A4 Landscape (297mm x 210mm) */}
           <div
             ref={printableRef}
-            className="w-full max-w-[850px] bg-white text-slate-950 shadow-xl border border-slate-300 p-8 sm:p-12 rounded-xl print:p-0 print:m-0 print:border-none print:shadow-none print:max-w-none print:w-full print:rounded-none"
+            className="w-full max-w-[1060px] bg-white text-slate-950 shadow-xl border border-slate-300 p-6 sm:p-8 rounded-xl print:p-0 print:m-0 print:border-none print:shadow-none print:max-w-none print:w-full print:rounded-none"
             style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
           >
             {/* OFFICIAL HEADER (Exact 5 Lines with School Logo on Left as requested) */}
-            <div className="relative flex items-center justify-center mb-6">
+            <div data-pdf-keep="true" className="imip-keep-together relative flex items-center justify-center mb-4">
               {/* School Logo */}
               <div className="absolute left-0 top-0">
                 <img
                   src="/assets/aistudio/Untitled_design__2__40f193e5.png"
                   alt="Manuel L. Quezon Elementary School Logo"
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
+                  className="w-16 h-16 sm:w-[70px] sm:h-[70px] object-contain"
                 />
               </div>
 
               {/* Exact 5-Line Header */}
-              <div className="text-center w-full px-16 sm:px-20">
-                {/* 1st Line: Republic of the Philippines */}
-                <div className="text-xs sm:text-sm text-slate-700 tracking-wide font-normal">
+              <div className="text-center w-full px-16 sm:px-24">
+                <div className="text-xs sm:text-[13px] text-slate-700 tracking-wide font-normal leading-snug">
                   Republic of the Philippines
                 </div>
-                {/* 2nd Line: National Capital Region */}
-                <div className="text-xs sm:text-sm text-slate-700 tracking-wide font-normal mt-0.5">
+                <div className="text-xs sm:text-[13px] text-slate-700 tracking-wide font-normal leading-snug">
                   National Capital Region
                 </div>
-                {/* 3rd Line: Schools Division Office of Caloocan City */}
-                <div className="text-xs sm:text-sm text-slate-700 tracking-wide font-normal mt-0.5">
+                <div className="text-xs sm:text-[13px] text-slate-700 tracking-wide font-normal leading-snug">
                   Schools Division Office of Caloocan City
                 </div>
-                {/* 4th Line: MANUEL L. QUEZON ELEMENTARY SCHOOL */}
-                <h1 className="text-sm sm:text-base font-bold text-slate-900 tracking-wider uppercase mt-0.5">
+                <h1 className="text-sm sm:text-[15px] font-bold text-slate-900 tracking-wider uppercase mt-0.5 leading-snug">
                   MANUEL L. QUEZON ELEMENTARY SCHOOL
                 </h1>
-                {/* 5th Line: Meaning of IMIP Report */}
-                <h2 className="text-base sm:text-lg font-black text-slate-950 uppercase tracking-tight mt-2.5">
+                <h2 className="text-base sm:text-lg font-black text-slate-950 uppercase tracking-tight mt-1.5">
                   INDIVIDUAL MATHEMATICS INTERVENTION PLAN (IMIP)
                 </h2>
               </div>
             </div>
 
-            {/* LEARNER & TEACHER INFORMATION SECTION (Structured with lines matching the template) */}
-            <div className="mb-6 space-y-3 text-xs sm:text-sm font-sans">
+            {/* LEARNER & TEACHER INFORMATION SECTION */}
+            <div data-pdf-keep="true" className="imip-keep-together mb-3.5 space-y-2 text-xs font-sans">
               {/* Row 1: Learner's Name & Grade Level & Section */}
-              <div className="flex flex-col sm:flex-row items-baseline gap-4 sm:gap-8">
+              <div className="flex flex-col sm:flex-row items-baseline gap-3 sm:gap-8">
                 <div className="flex-1 flex items-baseline gap-2 w-full">
                   <span className="font-bold text-slate-900 shrink-0">Learner's Name:</span>
-                  <div className="flex-1 border-b border-slate-900 pb-0.5 px-2 font-bold text-slate-900 text-sm">
+                  <div className="flex-1 border-b border-slate-900 pb-0.5 px-2 font-bold text-slate-900 text-xs sm:text-sm">
                     {learner.name}
                   </div>
                 </div>
                 <div className="w-full sm:w-5/12 flex items-baseline gap-2">
                   <span className="font-bold text-slate-900 shrink-0">Grade Level & Section:</span>
-                  <div className="flex-1 border-b border-slate-900 pb-0.5 px-2 font-bold text-slate-900 text-sm">
+                  <div className="flex-1 border-b border-slate-900 pb-0.5 px-2 font-bold text-slate-900 text-xs sm:text-sm">
                     Grade {gradeData.grade} - {learner.section || 'General'}
                   </div>
                 </div>
               </div>
 
               {/* Row 2: Tutor's / Teacher's Name & School Year */}
-              <div className="flex flex-col sm:flex-row items-baseline gap-4 sm:gap-8">
+              <div className="flex flex-col sm:flex-row items-baseline gap-3 sm:gap-8">
                 <div className="flex-1 flex items-baseline gap-2 w-full">
                   <span className="font-bold text-slate-900 shrink-0">Tutor's / Teacher's Name:</span>
-                  <div className="flex-1 border-b border-slate-900 pb-0.5 px-2 font-bold text-slate-900 text-sm">
+                  <div className="flex-1 border-b border-slate-900 pb-0.5 px-2 font-bold text-slate-900 text-xs sm:text-sm">
                     {learner.aralTeacher || gradeData.teacherName || 'ARAL Math Teacher'}
                   </div>
                 </div>
                 <div className="w-full sm:w-5/12 flex items-baseline gap-2">
                   <span className="font-bold text-slate-900 shrink-0">School Year:</span>
-                  <div className="flex-1 border-b border-slate-900 pb-0.5 px-2 font-bold text-slate-900 text-sm">
+                  <div className="flex-1 border-b border-slate-900 pb-0.5 px-2 font-bold text-slate-900 text-xs sm:text-sm">
                     2026 - 2027
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* MAIN IMIP INTERVENTION TABLE (Matching the official 4-column structure) */}
-            <div className="mb-8 border border-slate-900">
+            {/* LEARNER OVERALL SCORE & PROFICIENCY DESCRIPTOR SUMMARY */}
+            <div
+              data-pdf-keep="true"
+              className="imip-keep-together mb-4 border border-slate-900 bg-slate-50/70 px-3.5 py-2 grid grid-cols-2 sm:grid-cols-4 gap-3 items-center text-xs"
+            >
+              <div>
+                <div className="text-[10px] font-bold uppercase text-slate-600">Worksheets Answered</div>
+                <div className="font-bold text-slate-900 text-sm">
+                  {stats.completedCount} / {gradeData.totalWorksheets} WS
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase text-slate-600">Total Score</div>
+                <div className="font-bold text-slate-900 text-sm">
+                  {stats.totalScore} / {stats.totalItems} pts
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase text-slate-600">Total Percentage</div>
+                <div className="font-black text-slate-950 text-sm">
+                  {stats.completedCount > 0 ? `${stats.percentage.toFixed(1)}%` : '0.0%'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                  Proficiency Descriptor
+                </div>
+                <span
+                  className={`inline-block px-2.5 py-0.5 rounded border font-black text-[11px] uppercase tracking-wide ${getDescriptorBadgeClass(
+                    stats.status
+                  )}`}
+                >
+                  {stats.status.toUpperCase()}
+                </span>
+                <span className="ml-1.5 text-[10px] font-semibold text-slate-600">
+                  ({getDescriptorRangeLabel(stats.status)})
+                </span>
+              </div>
+            </div>
+
+            {/* MAIN IMIP INTERVENTION TABLE (Official 4-column structure) */}
+            <div className="mb-4 border border-slate-900">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-900 font-bold text-slate-900 text-xs">
-                    <th className="p-3 border-r border-slate-900 text-center w-[20%] font-bold">
+                  <tr className="border-b border-slate-900 font-bold text-slate-900 text-xs bg-slate-100/70">
+                    <th className="p-2.5 border-r border-slate-900 text-center w-[18%] font-bold">
                       Domain
                     </th>
-                    <th className="p-3 border-r border-slate-900 text-center w-[26%] font-bold">
+                    <th className="p-2.5 border-r border-slate-900 text-center w-[27%] font-bold">
                       Identified Gaps
                     </th>
-                    <th className="p-3 border-r border-slate-900 text-center w-[27%] font-bold">
+                    <th className="p-2.5 border-r border-slate-900 text-center w-[28%] font-bold">
                       Target Skills / Competencies
                     </th>
-                    <th className="p-3 text-center w-[27%] font-bold">
+                    <th className="p-2.5 text-center w-[27%] font-bold">
                       <div>Tutor Notes / Observations</div>
                       <div className="text-[10px] font-normal italic text-slate-600">
                         (Include observable remarks and next session's target)
@@ -877,15 +946,15 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
                     return (
                       <tr key={domain} className={`${!isLast ? 'border-b border-slate-900' : ''} align-top`}>
                         {/* Column 1: Domain */}
-                        <td className="p-3.5 border-r border-slate-900 font-bold text-slate-900 text-xs bg-slate-50/40 print:bg-transparent">
+                        <td className="p-2.5 border-r border-slate-900 font-bold text-slate-900 text-xs bg-slate-50/40 print:bg-transparent">
                           {domain}
                         </td>
 
                         {/* Column 2: Identified Gaps */}
-                        <td className="p-3.5 border-r border-slate-900 text-slate-800 text-[11px] leading-relaxed">
+                        <td className="p-2.5 border-r border-slate-900 text-slate-800 text-[11px] leading-snug">
                           {isEditing ? (
                             <textarea
-                              rows={4}
+                              rows={3}
                               value={plan.identifiedGaps}
                               onChange={e => handleUpdatePlan(domain, 'identifiedGaps', e.target.value)}
                               className="w-full p-1.5 text-xs border border-sky-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 font-sans"
@@ -896,10 +965,10 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
                         </td>
 
                         {/* Column 3: Target Skills / Competencies */}
-                        <td className="p-3.5 border-r border-slate-900 text-slate-800 text-[11px] leading-relaxed">
+                        <td className="p-2.5 border-r border-slate-900 text-slate-800 text-[11px] leading-snug">
                           {isEditing ? (
                             <textarea
-                              rows={4}
+                              rows={3}
                               value={plan.targetSkills}
                               onChange={e => handleUpdatePlan(domain, 'targetSkills', e.target.value)}
                               className="w-full p-1.5 text-xs border border-sky-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 font-sans"
@@ -910,10 +979,10 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
                         </td>
 
                         {/* Column 4: Tutor Notes / Observations */}
-                        <td className="p-3.5 text-slate-800 text-[11px] leading-relaxed">
+                        <td className="p-2.5 text-slate-800 text-[11px] leading-snug">
                           {isEditing ? (
                             <textarea
-                              rows={4}
+                              rows={3}
                               value={plan.tutorNotes}
                               onChange={e => handleUpdatePlan(domain, 'tutorNotes', e.target.value)}
                               className="w-full p-1.5 text-xs border border-sky-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 font-sans"
@@ -929,12 +998,69 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
               </table>
             </div>
 
-            {/* SIGNATURES SECTION (Exact format from template) */}
-            <div className="grid grid-cols-2 gap-12 text-xs sm:text-sm font-sans mt-10 pt-2">
+            {/* ADDITIONAL RESULTS: WORKSHEET SCORES BREAKDOWN & PROFICIENCY DESCRIPTOR SCALE */}
+            <div data-pdf-keep="true" className="imip-keep-together mb-5 border border-slate-900">
+              <div className="bg-slate-100 border-b border-slate-900 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2">
+                <span className="font-black text-[11px] uppercase tracking-wide text-slate-900">
+                  Additional Results: Individual Worksheet Scores Breakdown (WS 1 – WS {gradeData.totalWorksheets})
+                </span>
+                <span className="text-[11px] font-bold text-slate-900">
+                  Overall Result: {stats.totalScore}/{stats.totalItems} ({stats.completedCount > 0 ? stats.percentage.toFixed(1) : '0.0'}%) —{' '}
+                  <span className="uppercase font-black underline">{stats.status}</span>
+                </span>
+              </div>
+
+              <div className="p-2.5">
+                <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-12 gap-1.5">
+                  {Array.from({ length: gradeData.totalWorksheets }).map((_, i) => {
+                    const w = i + 1;
+                    const sc = learner.scores[w];
+                    const cfg = gradeData.worksheetConfigs.find(c => c.number === w);
+                    const max = sc?.totalItems || cfg?.defaultTotalItems || 25;
+                    const hasScore = sc && typeof sc.score === 'number';
+                    const wsPct = hasScore && max > 0 ? (sc.score / max) * 100 : null;
+
+                    return (
+                      <div
+                        key={w}
+                        className={`p-1 text-center border rounded text-[10px] ${
+                          hasScore
+                            ? 'bg-white border-slate-400'
+                            : 'bg-slate-50 border-slate-200 text-slate-400'
+                        }`}
+                      >
+                        <div className="font-bold text-slate-700 leading-tight">WS {w}</div>
+                        <div className="font-mono font-bold text-slate-950 leading-tight mt-0.5">
+                          {hasScore ? `${sc.score}/${max}` : '-'}
+                        </div>
+                        <div className="font-mono text-[9px] font-semibold text-slate-600 leading-tight">
+                          {wsPct !== null ? `${wsPct.toFixed(0)}%` : '—'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Descriptor Reference Legend */}
+                <div className="mt-2 pt-1.5 border-t border-slate-300 flex flex-wrap items-center justify-between gap-1.5 text-[9.5px] text-slate-700">
+                  <span className="font-bold uppercase text-slate-800">Proficiency Scale:</span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span><strong>Highly Proficient:</strong> 90%–100%</span>
+                    <span><strong>Proficient:</strong> 75%–89%</span>
+                    <span><strong>Nearly Proficient:</strong> 50%–74%</span>
+                    <span><strong>Low Proficient:</strong> 30%–49%</span>
+                    <span><strong>Not Proficient:</strong> Below 30%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SIGNATURES SECTION (Kept together so signatures never split across pages) */}
+            <div data-pdf-keep="true" className="imip-keep-together grid grid-cols-2 gap-12 text-xs sm:text-sm font-sans mt-6 pt-2">
               {/* Left Column: Prepared by */}
               <div>
-                <div className="font-bold text-slate-900 mb-8">Prepared by:</div>
-                <div className="w-full max-w-[320px]">
+                <div className="font-bold text-slate-900 mb-7">Prepared by:</div>
+                <div className="w-full max-w-[340px]">
                   <div className="border-b border-slate-900 pb-1 text-center font-bold text-slate-900 text-xs sm:text-sm uppercase">
                     {learner.aralTeacher || gradeData.teacherName || 'ARAL Math Teacher'}
                   </div>
@@ -946,8 +1072,8 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
 
               {/* Right Column: Noted by */}
               <div>
-                <div className="font-bold text-slate-900 mb-8">Noted by:</div>
-                <div className="w-full max-w-[320px]">
+                <div className="font-bold text-slate-900 mb-7">Noted by:</div>
+                <div className="w-full max-w-[340px]">
                   <div className="border-b border-slate-900 pb-1 text-center font-bold text-slate-900 text-xs sm:text-sm uppercase">
                     {gradeData.schoolHead || 'Principal IV'}
                   </div>
