@@ -146,7 +146,23 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
           totalScore += sc.score;
           totalItems += sc.totalItems;
         });
-        const pct = totalItems > 0 ? ((totalScore / totalItems) * 100).toFixed(2) : '0';
+        const pctNum = totalItems > 0 ? (totalScore / totalItems) * 100 : 0;
+        const pct = pctNum.toFixed(2);
+        const completedCount = Object.values(l.scores).filter(
+          sc => typeof sc.score === 'number' && sc.totalItems > 0
+        ).length;
+        const status =
+          completedCount === 0
+            ? 'No Data'
+            : pctNum >= 90
+            ? 'Highly Proficient'
+            : pctNum >= 75
+            ? 'Proficient'
+            : pctNum >= 50
+            ? 'Nearly Proficient'
+            : pctNum >= 30
+            ? 'Low Proficient'
+            : 'Not Proficient';
         rows.push([
           `Grade ${g}`,
           l.lrn,
@@ -156,7 +172,7 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
           totalScore,
           totalItems,
           `${pct}%`,
-          Number(pct) >= 85 ? 'Mastery' : Number(pct) >= 75 ? 'Progressing' : 'Needs Intervention',
+          status,
           l.remarks || ''
         ]);
       });

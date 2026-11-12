@@ -47,9 +47,11 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
   let totalMale = 0;
   let totalFemale = 0;
   let totalWorksheetsAll = 0;
-  let totalMastery = 0;
-  let totalProgressing = 0;
-  let totalIntervention = 0;
+  let totalHighlyProficient = 0;
+  let totalProficient = 0;
+  let totalNearlyProficient = 0;
+  let totalLowProficient = 0;
+  let totalNotProficient = 0;
   let schoolSumScore = 0;
   let schoolSumItems = 0;
 
@@ -60,9 +62,11 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
 
     let gradeSumScore = 0;
     let gradeSumItems = 0;
-    let gMastery = 0;
-    let gProgressing = 0;
-    let gIntervention = 0;
+    let gHighlyProficient = 0;
+    let gProficient = 0;
+    let gNearlyProficient = 0;
+    let gLowProficient = 0;
+    let gNotProficient = 0;
     let gMale = 0;
     let gFemale = 0;
 
@@ -80,15 +84,21 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
       gradeSumItems += st.totalItems;
 
       if (st.completedCount > 0) {
-        if (st.status === 'Mastery') {
-          totalMastery++;
-          gMastery++;
-        } else if (st.status === 'Progressing') {
-          totalProgressing++;
-          gProgressing++;
-        } else if (st.status === 'Needs Intervention') {
-          totalIntervention++;
-          gIntervention++;
+        if (st.status === 'Highly Proficient') {
+          totalHighlyProficient++;
+          gHighlyProficient++;
+        } else if (st.status === 'Proficient') {
+          totalProficient++;
+          gProficient++;
+        } else if (st.status === 'Nearly Proficient') {
+          totalNearlyProficient++;
+          gNearlyProficient++;
+        } else if (st.status === 'Low Proficient') {
+          totalLowProficient++;
+          gLowProficient++;
+        } else if (st.status === 'Not Proficient') {
+          totalNotProficient++;
+          gNotProficient++;
         }
       }
     });
@@ -107,11 +117,17 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
       female: gFemale,
       worksheets: gData.totalWorksheets,
       teacher: gData.teacherName,
-      mastery: gMastery,
-      progressing: gProgressing,
-      intervention: gIntervention
+      highlyProficient: gHighlyProficient,
+      proficient: gProficient,
+      nearlyProficient: gNearlyProficient,
+      lowProficient: gLowProficient,
+      notProficient: gNotProficient,
+      proficientPlus: gHighlyProficient + gProficient,
+      intervention: gNearlyProficient + gLowProficient + gNotProficient
     };
   });
+
+  const totalIntervention = totalNearlyProficient + totalLowProficient + totalNotProficient;
 
   const overallSchoolAverage =
     schoolSumItems > 0 ? (schoolSumScore / schoolSumItems) * 100 : 0;
@@ -119,9 +135,11 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
   const barColors = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#06b6d4'];
 
   const distributionData = [
-    { name: 'Mastery (≥85%)', value: totalMastery, color: '#10b981' },
-    { name: 'Progressing (75-84%)', value: totalProgressing, color: '#3b82f6' },
-    { name: 'Needs Intervention (<75%)', value: totalIntervention, color: '#ef4444' }
+    { name: 'Highly Proficient (90-100%)', value: totalHighlyProficient, color: '#10b981' },
+    { name: 'Proficient (75-89%)', value: totalProficient, color: '#0ea5e9' },
+    { name: 'Nearly Proficient (50-74%)', value: totalNearlyProficient, color: '#f59e0b' },
+    { name: 'Low Proficient (30-49%)', value: totalLowProficient, color: '#f97316' },
+    { name: 'Not Proficient (<30%)', value: totalNotProficient, color: '#ef4444' }
   ];
 
   const handleExportSummaryCSV = () => {
@@ -130,7 +148,19 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
       ['ARAL MATH MONITORING - CONSOLIDATED SCHOOL OVERVIEW REPORT S.Y. 2026-2027'],
       ['Date Exported:', new Date().toLocaleString()],
       [],
-      ['Grade Level', 'Worksheets', 'Learners', 'Male', 'Female', 'Average %', 'Mastery', 'Progressing', 'Needs Intervention']
+      [
+        'Grade Level',
+        'Worksheets',
+        'Learners',
+        'Male',
+        'Female',
+        'Average %',
+        'Highly Proficient (90-100%)',
+        'Proficient (75-89%)',
+        'Nearly Proficient (50-74%)',
+        'Low Proficient (30-49%)',
+        'Not Proficient (<30%)'
+      ]
     ];
 
     gradeStatsList.forEach(g => {
@@ -141,14 +171,28 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
         g.male,
         g.female,
         `${g.average}%`,
-        g.mastery,
-        g.progressing,
-        g.intervention
+        g.highlyProficient,
+        g.proficient,
+        g.nearlyProficient,
+        g.lowProficient,
+        g.notProficient
       ]);
     });
 
     rows.push([]);
-    rows.push(['SCHOOL TOTAL', totalWorksheetsAll, totalLearners, totalMale, totalFemale, `${overallSchoolAverage.toFixed(2)}%`, totalMastery, totalProgressing, totalIntervention]);
+    rows.push([
+      'SCHOOL TOTAL',
+      totalWorksheetsAll,
+      totalLearners,
+      totalMale,
+      totalFemale,
+      `${overallSchoolAverage.toFixed(2)}%`,
+      totalHighlyProficient,
+      totalProficient,
+      totalNearlyProficient,
+      totalLowProficient,
+      totalNotProficient
+    ]);
 
     exportToCSV(`MLQES_ARAL_Math_School_Overview_${new Date().toISOString().slice(0, 10)}.csv`, rows);
   };
@@ -245,46 +289,46 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
           </div>
         </div>
 
-        {/* Mastery Tier */}
+        {/* Highly Proficient Tier */}
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-bold uppercase">Mastery Tier</span>
+            <span className="text-xs font-bold uppercase">Highly Proficient</span>
             <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2">
             <div className="text-2xl sm:text-3xl font-black text-emerald-600 font-display">
-              {totalMastery}
+              {totalHighlyProficient}
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">
-              Scored ≥ 85.0%
+              Scored 90% - 100%
             </div>
           </div>
         </div>
 
-        {/* Progressing Tier */}
+        {/* Proficient Tier */}
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-bold uppercase">Progressing</span>
-            <div className="p-2 bg-blue-100 text-blue-700 rounded-xl">
+            <span className="text-xs font-bold uppercase">Proficient</span>
+            <div className="p-2 bg-sky-100 text-sky-700 rounded-xl">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-2xl sm:text-3xl font-black text-blue-600 font-display">
-              {totalProgressing}
+            <div className="text-2xl sm:text-3xl font-black text-sky-600 font-display">
+              {totalProficient}
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">
-              Scored 75.0% - 84.9%
+              Scored 75% - 89%
             </div>
           </div>
         </div>
 
-        {/* Needs Intervention */}
+        {/* Needs Intervention (<75%) */}
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-bold uppercase">Intervention</span>
+            <span className="text-xs font-bold uppercase">Needs IMIP</span>
             <div className="p-2 bg-rose-100 text-rose-700 rounded-xl">
               <AlertTriangle className="w-4 h-4" />
             </div>
@@ -294,7 +338,7 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
               {totalIntervention}
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">
-              Scored &lt; 75.0% (IMIP)
+              Nearly / Low / Not Proficient
             </div>
           </div>
         </div>
@@ -432,18 +476,26 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
             </ResponsiveContainer>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
+          <div className="pt-3 border-t border-slate-100 grid grid-cols-5 gap-1.5 text-center text-xs">
             <div className="bg-emerald-50 p-1.5 rounded-lg">
-              <div className="font-extrabold text-emerald-700">{totalMastery}</div>
-              <div className="text-[10px] text-slate-500 font-medium">Mastery</div>
+              <div className="font-extrabold text-emerald-700">{totalHighlyProficient}</div>
+              <div className="text-[9px] text-slate-500 font-semibold leading-tight">Highly Prof.</div>
             </div>
-            <div className="bg-blue-50 p-1.5 rounded-lg">
-              <div className="font-extrabold text-blue-700">{totalProgressing}</div>
-              <div className="text-[10px] text-slate-500 font-medium">Progressing</div>
+            <div className="bg-sky-50 p-1.5 rounded-lg">
+              <div className="font-extrabold text-sky-700">{totalProficient}</div>
+              <div className="text-[9px] text-slate-500 font-semibold leading-tight">Proficient</div>
+            </div>
+            <div className="bg-amber-50 p-1.5 rounded-lg">
+              <div className="font-extrabold text-amber-700">{totalNearlyProficient}</div>
+              <div className="text-[9px] text-slate-500 font-semibold leading-tight">Nearly Prof.</div>
+            </div>
+            <div className="bg-orange-50 p-1.5 rounded-lg">
+              <div className="font-extrabold text-orange-700">{totalLowProficient}</div>
+              <div className="text-[9px] text-slate-500 font-semibold leading-tight">Low Prof.</div>
             </div>
             <div className="bg-rose-50 p-1.5 rounded-lg">
-              <div className="font-extrabold text-rose-700">{totalIntervention}</div>
-              <div className="text-[10px] text-slate-500 font-medium">Intervention</div>
+              <div className="font-extrabold text-rose-700">{totalNotProficient}</div>
+              <div className="text-[9px] text-slate-500 font-semibold leading-tight">Not Prof.</div>
             </div>
           </div>
         </div>
@@ -472,7 +524,7 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
                 <th className="py-3 px-4 text-center">Enrolled</th>
                 <th className="py-3 px-4 text-center">Boys / Girls</th>
                 <th className="py-3 px-4 text-center">Average %</th>
-                <th className="py-3 px-4 text-center">Mastery / Needs IMIP</th>
+                <th className="py-3 px-4 text-center">Proficient+ / Needs IMIP</th>
                 <th className="py-3 px-4 text-right">Action</th>
               </tr>
             </thead>
@@ -504,10 +556,14 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
                   <td className="py-3.5 px-4 text-center">
                     <span
                       className={`inline-block px-2.5 py-1 rounded-full font-bold font-mono text-xs ${
-                        g.average >= 85
+                        g.average >= 90
                           ? 'bg-emerald-100 text-emerald-800'
                           : g.average >= 75
                           ? 'bg-sky-100 text-sky-800'
+                          : g.average >= 50
+                          ? 'bg-amber-100 text-amber-800'
+                          : g.average >= 30
+                          ? 'bg-orange-100 text-orange-800'
                           : 'bg-rose-100 text-rose-800'
                       }`}
                     >
@@ -515,7 +571,7 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-center">
-                    <span className="text-emerald-700 font-bold">{g.mastery}</span>
+                    <span className="text-emerald-700 font-bold">{g.proficientPlus}</span>
                     <span className="text-slate-400 mx-1">/</span>
                     <span className="text-rose-600 font-bold">{g.intervention}</span>
                   </td>

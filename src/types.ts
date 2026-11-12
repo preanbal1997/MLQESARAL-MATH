@@ -45,6 +45,14 @@ export interface GoogleSheetsSyncConfig {
   errorMessage?: string;
 }
 
+export type ProficiencyDescriptor =
+  | 'Highly Proficient'
+  | 'Proficient'
+  | 'Nearly Proficient'
+  | 'Low Proficient'
+  | 'Not Proficient'
+  | 'No Data';
+
 export interface LearnerSummary {
   learner: Learner;
   totalScore: number;
@@ -52,7 +60,7 @@ export interface LearnerSummary {
   percentage: number;
   completedWorksheets: number;
   totalWorksheets: number;
-  status: 'Mastery' | 'Progressing' | 'Needs Intervention' | 'No Data';
+  status: ProficiencyDescriptor;
 }
 
 export interface GradeSummary {
@@ -62,7 +70,9 @@ export interface GradeSummary {
   femaleCount: number;
   averagePercentage: number;
   totalWorksheets: number;
-  masteryCount: number;
-  progressingCount: number;
-  interventionCount: number;
+  highlyProficientCount: number;
+  proficientCount: number;
+  nearlyProficientCount: number;
+  lowProficientCount: number;
+  notProficientCount: number;
 }

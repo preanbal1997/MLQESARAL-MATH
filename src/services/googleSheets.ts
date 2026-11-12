@@ -1,10 +1,22 @@
-import type { SchoolData, GradeLevel, GradeData, Learner } from '../types';
+import type { SchoolData, GradeLevel, GradeData, Learner, ProficiencyDescriptor } from '../types';
 
 export interface SyncResult {
   success: boolean;
   spreadsheetId?: string;
   spreadsheetUrl?: string;
   error?: string;
+}
+
+export function getProficiencyDescriptor(
+  percentage: number,
+  completedCount: number = 1
+): ProficiencyDescriptor {
+  if (completedCount <= 0) return 'No Data';
+  if (percentage >= 90) return 'Highly Proficient';
+  if (percentage >= 75) return 'Proficient';
+  if (percentage >= 50) return 'Nearly Proficient';
+  if (percentage >= 30) return 'Low Proficient';
+  return 'Not Proficient';
 }
 
 export function computeLearnerStats(learner: Learner, gradeData: GradeData) {
@@ -22,13 +34,7 @@ export function computeLearnerStats(learner: Learner, gradeData: GradeData) {
   }
 
   const percentage = totalItems > 0 ? (totalScore / totalItems) * 100 : 0;
-  let status: 'Mastery' | 'Progressing' | 'Needs Intervention' | 'No Data' = 'No Data';
-
-  if (completedCount > 0) {
-    if (percentage >= 85) status = 'Mastery';
-    else if (percentage >= 75) status = 'Progressing';
-    else status = 'Needs Intervention';
-  }
+  const status = getProficiencyDescriptor(percentage, completedCount);
 
   return { totalScore, totalItems, percentage, completedCount, status };
 }
@@ -182,9 +188,11 @@ export async function syncAllDataToSpreadsheet(
       'Male',
       'Female',
       'Average Score %',
-      'Mastery (>=85%)',
-      'Progressing (75-84%)',
-      'Needs Intervention (<75%)'
+      'Highly Proficient (90-100%)',
+      'Proficient (75-89%)',
+      'Nearly Proficient (50-74%)',
+      'Low Proficient (30-49%)',
+      'Not Proficient (<30%)'
     ]
   ];
 
@@ -195,18 +203,22 @@ export async function syncAllDataToSpreadsheet(
     let femaleCount = gData.learners.filter(l => l.gender === 'Female').length;
     let sumPercentage = 0;
     let validCount = 0;
-    let mastery = 0;
-    let progressing = 0;
-    let intervention = 0;
+    let highlyProficient = 0;
+    let proficient = 0;
+    let nearlyProficient = 0;
+    let lowProficient = 0;
+    let notProficient = 0;
 
     gData.learners.forEach(l => {
       const stats = computeLearnerStats(l, gData);
       if (stats.completedCount > 0) {
         sumPercentage += stats.percentage;
         validCount++;
-        if (stats.status === 'Mastery') mastery++;
-        else if (stats.status === 'Progressing') progressing++;
-        else if (stats.status === 'Needs Intervention') intervention++;
+        if (stats.status === 'Highly Proficient') highlyProficient++;
+        else if (stats.status === 'Proficient') proficient++;
+        else if (stats.status === 'Nearly Proficient') nearlyProficient++;
+        else if (stats.status === 'Low Proficient') lowProficient++;
+        else if (stats.status === 'Not Proficient') notProficient++;
       }
     });
 
@@ -220,9 +232,11 @@ export async function syncAllDataToSpreadsheet(
       maleCount,
       femaleCount,
       avg,
-      mastery,
-      progressing,
-      intervention
+      highlyProficient,
+      proficient,
+      nearlyProficient,
+      lowProficient,
+      notProficient
     ]);
   }
 

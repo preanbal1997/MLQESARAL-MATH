@@ -153,9 +153,11 @@ export const GradeView: React.FC<GradeViewProps> = ({
     const total = learnersWithStats.length;
     let sumPct = 0;
     let validCount = 0;
-    let mastery = 0;
-    let progressing = 0;
-    let intervention = 0;
+    let highlyProficient = 0;
+    let proficient = 0;
+    let nearlyProficient = 0;
+    let lowProficient = 0;
+    let notProficient = 0;
     let male = 0;
     let female = 0;
 
@@ -166,14 +168,28 @@ export const GradeView: React.FC<GradeViewProps> = ({
       if (l.stats.completedCount > 0) {
         sumPct += l.stats.percentage;
         validCount++;
-        if (l.stats.status === 'Mastery') mastery++;
-        else if (l.stats.status === 'Progressing') progressing++;
-        else if (l.stats.status === 'Needs Intervention') intervention++;
+        if (l.stats.status === 'Highly Proficient') highlyProficient++;
+        else if (l.stats.status === 'Proficient') proficient++;
+        else if (l.stats.status === 'Nearly Proficient') nearlyProficient++;
+        else if (l.stats.status === 'Low Proficient') lowProficient++;
+        else if (l.stats.status === 'Not Proficient') notProficient++;
       }
     });
 
     const avg = validCount > 0 ? sumPct / validCount : 0;
-    return { total, avg, mastery, progressing, intervention, male, female };
+    const intervention = nearlyProficient + lowProficient + notProficient;
+    return {
+      total,
+      avg,
+      highlyProficient,
+      proficient,
+      nearlyProficient,
+      lowProficient,
+      notProficient,
+      intervention,
+      male,
+      female
+    };
   }, [learnersWithStats]);
 
   // Compute average score per worksheet for the Dashboard bar chart
@@ -738,7 +754,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
                   <th className="p-2.5 border-r border-slate-300 text-center min-w-[100px] bg-amber-100 font-black text-amber-950">
                     Overall %
                   </th>
-                  <th className="p-2.5 text-center min-w-[120px] bg-slate-100">
+                  <th className="p-2.5 text-center min-w-[155px] bg-slate-100">
                     Status
                   </th>
                 </tr>
@@ -757,9 +773,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
                 ) : (
                   filteredLearners.map((l, index) => {
                     const pct = l.stats.percentage;
-                    const isMastery = l.stats.status === 'Mastery';
-                    const isProgressing = l.stats.status === 'Progressing';
-                    const isIntervention = l.stats.status === 'Needs Intervention';
+                    const status = l.stats.status;
 
                     return (
                       <tr
@@ -929,11 +943,15 @@ export const GradeView: React.FC<GradeViewProps> = ({
                                   <div className="flex items-center gap-1 mt-0.5">
                                     <span
                                       className={`text-[10px] font-bold font-mono ${
-                                        cellPct! >= 85
+                                        cellPct! >= 90
                                           ? 'text-emerald-700'
                                           : cellPct! >= 75
-                                          ? 'text-blue-700'
-                                          : 'text-rose-600'
+                                          ? 'text-sky-700'
+                                          : cellPct! >= 50
+                                          ? 'text-amber-700'
+                                          : cellPct! >= 30
+                                          ? 'text-orange-700'
+                                          : 'text-rose-700'
                                       }`}
                                     >
                                       {cellPct!.toFixed(0)}%
@@ -965,31 +983,39 @@ export const GradeView: React.FC<GradeViewProps> = ({
                         <td className="p-2 border-r border-slate-200 text-center font-mono font-extrabold text-sm bg-amber-50">
                           <span
                             className={
-                              pct >= 85
+                              l.stats.completedCount === 0
+                                ? 'text-slate-400'
+                                : pct >= 90
                                 ? 'text-emerald-700'
                                 : pct >= 75
-                                ? 'text-blue-700'
-                                : pct > 0
-                                ? 'text-rose-600'
-                                : 'text-slate-400'
+                                ? 'text-sky-700'
+                                : pct >= 50
+                                ? 'text-amber-700'
+                                : pct >= 30
+                                ? 'text-orange-700'
+                                : 'text-rose-700'
                             }
                           >
-                            {pct > 0 ? `${pct.toFixed(1)}%` : '0%'}
+                            {l.stats.completedCount > 0 ? `${pct.toFixed(1)}%` : '0%'}
                           </span>
                         </td>
-                        <td className="p-2 text-center">
+                        <td className="p-2 text-center whitespace-nowrap">
                           <span
-                            className={`inline-block px-2 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${
-                              isMastery
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : isProgressing
-                                ? 'bg-blue-100 text-blue-800'
-                                : isIntervention
-                                ? 'bg-rose-100 text-rose-800'
-                                : 'bg-slate-100 text-slate-500'
+                            className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wide border ${
+                              status === 'Highly Proficient'
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : status === 'Proficient'
+                                ? 'bg-sky-100 text-sky-800 border-sky-300'
+                                : status === 'Nearly Proficient'
+                                ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                : status === 'Low Proficient'
+                                ? 'bg-orange-100 text-orange-800 border-orange-300'
+                                : status === 'Not Proficient'
+                                ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                : 'bg-slate-100 text-slate-500 border-slate-200'
                             }`}
                           >
-                            {l.stats.status}
+                            {status}
                           </span>
                         </td>
                       </tr>
@@ -998,6 +1024,30 @@ export const GradeView: React.FC<GradeViewProps> = ({
                 )}
               </tbody>
             </table>
+
+            {/* Proficiency Descriptors Legend */}
+            <div className="sticky bottom-0 left-0 right-0 z-20 bg-slate-50/95 backdrop-blur-xs border-t border-slate-200 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+              <span className="font-extrabold text-slate-700 uppercase tracking-wide">
+                Proficiency Descriptors:
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  Highly Proficient <span className="font-mono font-semibold opacity-80">90%–100%</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-sky-100 text-sky-800 border border-sky-300">
+                  Proficient <span className="font-mono font-semibold opacity-80">75%–89%</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                  Nearly Proficient <span className="font-mono font-semibold opacity-80">50%–74%</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-orange-100 text-orange-800 border border-orange-300">
+                  Low Proficient <span className="font-mono font-semibold opacity-80">30%–49%</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                  Not Proficient <span className="font-mono font-semibold opacity-80">Below 30%</span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1132,10 +1182,16 @@ export const GradeView: React.FC<GradeViewProps> = ({
                       <td className="p-3 text-center">
                         <span
                           className={`inline-block px-2 py-0.5 rounded-full font-bold font-mono text-[11px] ${
-                            learner.stats.percentage >= 85
+                            learner.stats.completedCount === 0
+                              ? 'bg-slate-100 text-slate-500'
+                              : learner.stats.percentage >= 90
                               ? 'bg-emerald-100 text-emerald-800'
                               : learner.stats.percentage >= 75
                               ? 'bg-sky-100 text-sky-800'
+                              : learner.stats.percentage >= 50
+                              ? 'bg-amber-100 text-amber-800'
+                              : learner.stats.percentage >= 30
+                              ? 'bg-orange-100 text-orange-800'
                               : 'bg-rose-100 text-rose-800'
                           }`}
                         >
@@ -1216,22 +1272,22 @@ export const GradeView: React.FC<GradeViewProps> = ({
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="text-xs uppercase font-bold text-slate-500">Mastery Level (≥85%)</div>
+              <div className="text-xs uppercase font-bold text-slate-500">Proficient & Highly Proficient (≥75%)</div>
               <div className="text-3xl font-black text-emerald-600 font-display mt-1">
-                {gradeMetrics.mastery}
+                {gradeMetrics.highlyProficient + gradeMetrics.proficient}
               </div>
               <div className="text-xs text-slate-500 mt-1">
-                {gradeMetrics.total > 0 ? ((gradeMetrics.mastery / gradeMetrics.total) * 100).toFixed(0) : 0}% of class
+                {gradeMetrics.highlyProficient} Highly Proficient • {gradeMetrics.proficient} Proficient
               </div>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="text-xs uppercase font-bold text-slate-500">Needs IMIP Intervention</div>
+              <div className="text-xs uppercase font-bold text-slate-500">Needs IMIP (&lt;75%)</div>
               <div className="text-3xl font-black text-rose-600 font-display mt-1">
                 {gradeMetrics.intervention}
               </div>
               <div className="text-xs text-slate-500 mt-1">
-                Scored &lt; 75% in numeracy
+                {gradeMetrics.nearlyProficient} Nearly • {gradeMetrics.lowProficient} Low • {gradeMetrics.notProficient} Not
               </div>
             </div>
           </div>
@@ -1299,29 +1355,42 @@ export const GradeView: React.FC<GradeViewProps> = ({
               <AlertTriangle className="w-5 h-5 text-rose-500" />
               Learners Requiring IMIP Action Plan (Grade {gradeData.grade})
             </h3>
-            {learnersWithStats.filter(l => l.stats.status === 'Needs Intervention').length === 0 ? (
+            {learnersWithStats.filter(
+              l =>
+                l.stats.status === 'Nearly Proficient' ||
+                l.stats.status === 'Low Proficient' ||
+                l.stats.status === 'Not Proficient'
+            ).length === 0 ? (
               <div className="p-4 bg-emerald-50 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>All learners in Grade {gradeData.grade} currently meet or exceed the 75% numeracy threshold!</span>
+                <span>All learners in Grade {gradeData.grade} are Proficient or Highly Proficient (≥ 75%)!</span>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {learnersWithStats
-                  .filter(l => l.stats.status === 'Needs Intervention')
+                  .filter(
+                    l =>
+                      l.stats.status === 'Nearly Proficient' ||
+                      l.stats.status === 'Low Proficient' ||
+                      l.stats.status === 'Not Proficient'
+                  )
                   .map(learner => (
                     <div
                       key={learner.id}
-                      className="p-3.5 bg-rose-50/50 border border-rose-200 rounded-xl flex items-center justify-between"
+                      className="p-3.5 bg-rose-50/50 border border-rose-200 rounded-xl flex items-center justify-between gap-2"
                     >
                       <div>
                         <div className="font-bold text-slate-900 text-sm">{learner.name}</div>
-                        <div className="text-xs text-rose-700 font-semibold mt-0.5">
-                          Score: {learner.stats.percentage.toFixed(1)}% ({learner.stats.completedCount} completed)
+                        <div className="text-xs text-rose-700 font-semibold mt-0.5 flex flex-wrap items-center gap-1.5">
+                          <span>{learner.stats.percentage.toFixed(1)}%</span>
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-white border border-rose-200 text-rose-800">
+                            {learner.stats.status}
+                          </span>
                         </div>
                       </div>
                       <button
                         onClick={() => onOpenIMIP(learner)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer shadow-xs"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer shadow-xs shrink-0"
                       >
                         <Printer className="w-3.5 h-3.5" />
                         Print IMIP
