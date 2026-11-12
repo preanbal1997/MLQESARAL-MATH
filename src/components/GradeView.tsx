@@ -36,6 +36,47 @@ import {
 import type { GradeLevel, GradeData, Learner, WorksheetConfig, ScoreValue } from '../types';
 import { computeLearnerStats, exportToCSV } from '../services/googleSheets';
 
+// Helper to extract the surname from a student's full name
+export function extractSurname(fullName: string): string {
+  if (!fullName) return '';
+  const trimmed = fullName.trim();
+  // Format: "LastName, FirstName MiddleName"
+  if (trimmed.includes(',')) {
+    const parts = trimmed.split(',');
+    return parts[0].trim().toLowerCase();
+  }
+  // Format: "FirstName MiddleName LastName"
+  const tokens = trimmed.split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return '';
+  if (tokens.length === 1) return tokens[0].toLowerCase();
+
+  const lastWord = tokens[tokens.length - 1];
+  const secondLastWord = tokens[tokens.length - 2].toLowerCase();
+
+  // Multi-word Filipino prefixes: Dela, Del, De, San, Santa, etc.
+  if (tokens.length >= 3) {
+    const thirdLastWord = tokens[tokens.length - 3].toLowerCase();
+    if (thirdLastWord === 'de' && (secondLastWord === 'los' || secondLastWord === 'las')) {
+      return `de ${secondLastWord} ${lastWord}`.toLowerCase();
+    }
+  }
+
+  if (['de', 'dela', 'del', 'san', 'santa', 'da', 'di', 'van', 'von'].includes(secondLastWord)) {
+    return `${secondLastWord} ${lastWord}`.toLowerCase();
+  }
+
+  return lastWord.toLowerCase();
+}
+
+// Compare learners alphabetically by surname (A to Z)
+export function compareLearnersBySurname(a: { name: string }, b: { name: string }): number {
+  const surnameA = extractSurname(a.name);
+  const surnameB = extractSurname(b.name);
+  const cmp = surnameA.localeCompare(surnameB, undefined, { sensitivity: 'base' });
+  if (cmp !== 0) return cmp;
+  return a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' });
+}
+
 interface GradeViewProps {
   gradeData: GradeData;
   onUpdateGradeData: (updated: GradeData) => void;
@@ -83,15 +124,17 @@ export const GradeView: React.FC<GradeViewProps> = ({
     remarks: ''
   });
 
-  // Calculate stats for all learners
+  // Calculate stats for all learners, automatically sorted alphabetically by surname (A-Z)
   const learnersWithStats = useMemo(() => {
-    return gradeData.learners.map(learner => {
-      const stats = computeLearnerStats(learner, gradeData);
-      return {
-        ...learner,
-        stats
-      };
-    });
+    return [...gradeData.learners]
+      .sort(compareLearnersBySurname)
+      .map(learner => {
+        const stats = computeLearnerStats(learner, gradeData);
+        return {
+          ...learner,
+          stats
+        };
+      });
   }, [gradeData]);
 
   // Filtered learners
@@ -322,19 +365,21 @@ export const GradeView: React.FC<GradeViewProps> = ({
     if (!learnerForm.name.trim()) return;
 
     if (editingLearner) {
-      const updatedLearners = gradeData.learners.map(l =>
-        l.id === editingLearner.id
-          ? {
-              ...l,
-              lrn: learnerForm.lrn.trim(),
-              name: learnerForm.name.trim(),
-              gender: learnerForm.gender,
-              section: learnerForm.section.trim(),
-              aralTeacher: learnerForm.aralTeacher.trim() || l.aralTeacher || gradeData.teacherName,
-              remarks: learnerForm.remarks.trim()
-            }
-          : l
-      );
+      const updatedLearners = gradeData.learners
+        .map(l =>
+          l.id === editingLearner.id
+            ? {
+                ...l,
+                lrn: learnerForm.lrn.trim(),
+                name: learnerForm.name.trim(),
+                gender: learnerForm.gender,
+                section: learnerForm.section.trim(),
+                aralTeacher: learnerForm.aralTeacher.trim() || l.aralTeacher || gradeData.teacherName,
+                remarks: learnerForm.remarks.trim()
+              }
+            : l
+        )
+        .sort(compareLearnersBySurname);
       onUpdateGradeData({ ...gradeData, learners: updatedLearners });
       setEditingLearner(null);
     } else {
@@ -348,9 +393,10 @@ export const GradeView: React.FC<GradeViewProps> = ({
         remarks: learnerForm.remarks.trim(),
         scores: {}
       };
+      const updatedLearners = [...gradeData.learners, newLearner].sort(compareLearnersBySurname);
       onUpdateGradeData({
         ...gradeData,
-        learners: [...gradeData.learners, newLearner]
+        learners: updatedLearners
       });
       setIsAddLearnerOpen(false);
     }
@@ -391,9 +437,11 @@ export const GradeView: React.FC<GradeViewProps> = ({
       };
     });
 
+    const updatedLearners = [...gradeData.learners, ...newLearners].sort(compareLearnersBySurname);
+
     onUpdateGradeData({
       ...gradeData,
-      learners: [...gradeData.learners, ...newLearners]
+      learners: updatedLearners
     });
     setBulkNamesText('');
     setBulkInputOpen(false);
@@ -626,7 +674,15 @@ export const GradeView: React.FC<GradeViewProps> = ({
 
                   {/* Sticky Column 4: Student Name (190px) */}
                   <th className="sticky left-[214px] z-30 bg-slate-100 p-2 text-left w-[190px] min-w-[190px] max-w-[190px] border-r-2 border-slate-400 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.12)]">
-                    Learner Name
+                    <div className="flex items-center justify-between gap-1">
+                      <span>Learner Name</span>
+                      <span
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 tracking-tight shrink-0"
+                        title="Automatically sorted alphabetically by Surname (A-Z)"
+                      >
+                        Surname A-Z
+                      </span>
+                    </div>
                   </th>
 
                   {/* Dynamic Worksheet Columns (WS 1 to WS N) */}
@@ -1018,7 +1074,17 @@ export const GradeView: React.FC<GradeViewProps> = ({
                 <tr>
                   <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3 w-36">LRN</th>
-                  <th className="p-3">Learner Full Name</th>
+                  <th className="p-3">
+                    <div className="flex items-center gap-2">
+                      <span>Learner Full Name</span>
+                      <span
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 tracking-tight"
+                        title="Automatically sorted alphabetically by Surname (A-Z)"
+                      >
+                        Surname A-Z
+                      </span>
+                    </div>
+                  </th>
                   <th className="p-3 w-20 text-center">Gender</th>
                   <th className="p-3 w-28">Section</th>
                   <th className="p-3 w-40">ARAL Teacher</th>
@@ -1305,11 +1371,14 @@ export const GradeView: React.FC<GradeViewProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Santos, Juanito M."
+                  placeholder="e.g. Santos, Juanito M. or Juan Dela Cruz"
                   value={learnerForm.name}
                   onChange={e => setLearnerForm({ ...learnerForm, name: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
                 />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Learners are automatically arranged in alphabetical order by <strong className="text-emerald-700">Surname (A to Z)</strong> across the score table, roster, and IMIP.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -1410,7 +1479,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
             </div>
 
             <p className="text-xs text-slate-600">
-              Paste a list of student names below (one per line). Format can be "Lastname, Firstname" or "Lastname, Firstname, Male/Female".
+              Paste a list of student names below (one per line). Format can be "Lastname, Firstname" or "Lastname, Firstname, Male/Female". All learners will be automatically organized in alphabetical order by <strong className="text-emerald-700">Surname (A to Z)</strong>.
             </p>
 
             <textarea
