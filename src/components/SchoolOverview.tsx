@@ -135,11 +135,11 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
   const barColors = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#06b6d4'];
 
   const distributionData = [
-    { name: 'Highly Proficient (90-100%)', value: totalHighlyProficient, color: '#10b981' },
-    { name: 'Proficient (75-89%)', value: totalProficient, color: '#0ea5e9' },
-    { name: 'Nearly Proficient (50-74%)', value: totalNearlyProficient, color: '#f59e0b' },
-    { name: 'Low Proficient (30-49%)', value: totalLowProficient, color: '#f97316' },
-    { name: 'Not Proficient (<30%)', value: totalNotProficient, color: '#ef4444' }
+    { name: 'Highly Proficient (90%–100%)', value: totalHighlyProficient, color: '#10b981' },
+    { name: 'Proficient (75%–89%)', value: totalProficient, color: '#0ea5e9' },
+    { name: 'Nearly Proficient (50%–74%)', value: totalNearlyProficient, color: '#f59e0b' },
+    { name: 'Low Proficient (25%–49%)', value: totalLowProficient, color: '#f97316' },
+    { name: 'Not Proficient (0%–24%)', value: totalNotProficient, color: '#ef4444' }
   ];
 
   const handleExportSummaryCSV = () => {
@@ -155,11 +155,11 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
         'Male',
         'Female',
         'Average %',
-        'Highly Proficient (90-100%)',
-        'Proficient (75-89%)',
-        'Nearly Proficient (50-74%)',
-        'Low Proficient (30-49%)',
-        'Not Proficient (<30%)'
+        'Highly Proficient (90%-100%)',
+        'Proficient (75%-89%)',
+        'Nearly Proficient (50%-74%)',
+        'Low Proficient (25%-49%)',
+        'Not Proficient (0%-24%)'
       ]
     ];
 
@@ -302,7 +302,7 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
               {totalHighlyProficient}
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">
-              Scored 90% - 100%
+              Scored 90%–100%
             </div>
           </div>
         </div>
@@ -320,7 +320,7 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
               {totalProficient}
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">
-              Scored 75% - 89%
+              Scored 75%–89%
             </div>
           </div>
         </div>
@@ -338,7 +338,7 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
               {totalIntervention}
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">
-              Nearly / Low / Not Proficient
+              0%–74% (Nearly / Low / Not Proficient)
             </div>
           </div>
         </div>
@@ -562,7 +562,7 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
                           ? 'bg-sky-100 text-sky-800'
                           : g.average >= 50
                           ? 'bg-amber-100 text-amber-800'
-                          : g.average >= 30
+                          : g.average >= 25
                           ? 'bg-orange-100 text-orange-800'
                           : 'bg-rose-100 text-rose-800'
                       }`}

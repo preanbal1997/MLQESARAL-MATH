@@ -949,7 +949,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
                                           ? 'text-sky-700'
                                           : cellPct! >= 50
                                           ? 'text-amber-700'
-                                          : cellPct! >= 30
+                                          : cellPct! >= 25
                                           ? 'text-orange-700'
                                           : 'text-rose-700'
                                       }`}
@@ -991,7 +991,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
                                 ? 'text-sky-700'
                                 : pct >= 50
                                 ? 'text-amber-700'
-                                : pct >= 30
+                                : pct >= 25
                                 ? 'text-orange-700'
                                 : 'text-rose-700'
                             }
@@ -1041,10 +1041,10 @@ export const GradeView: React.FC<GradeViewProps> = ({
                   Nearly Proficient <span className="font-mono font-semibold opacity-80">50%–74%</span>
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-orange-100 text-orange-800 border border-orange-300">
-                  Low Proficient <span className="font-mono font-semibold opacity-80">30%–49%</span>
+                  Low Proficient <span className="font-mono font-semibold opacity-80">25%–49%</span>
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                  Not Proficient <span className="font-mono font-semibold opacity-80">Below 30%</span>
+                  Not Proficient <span className="font-mono font-semibold opacity-80">0%–24%</span>
                 </span>
               </div>
             </div>
@@ -1190,7 +1190,7 @@ export const GradeView: React.FC<GradeViewProps> = ({
                               ? 'bg-sky-100 text-sky-800'
                               : learner.stats.percentage >= 50
                               ? 'bg-amber-100 text-amber-800'
-                              : learner.stats.percentage >= 30
+                              : learner.stats.percentage >= 25
                               ? 'bg-orange-100 text-orange-800'
                               : 'bg-rose-100 text-rose-800'
                           }`}

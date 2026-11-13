@@ -15,7 +15,7 @@ export function getProficiencyDescriptor(
   if (percentage >= 90) return 'Highly Proficient';
   if (percentage >= 75) return 'Proficient';
   if (percentage >= 50) return 'Nearly Proficient';
-  if (percentage >= 30) return 'Low Proficient';
+  if (percentage >= 25) return 'Low Proficient';
   return 'Not Proficient';
 }
 
@@ -188,11 +188,11 @@ export async function syncAllDataToSpreadsheet(
       'Male',
       'Female',
       'Average Score %',
-      'Highly Proficient (90-100%)',
-      'Proficient (75-89%)',
-      'Nearly Proficient (50-74%)',
-      'Low Proficient (30-49%)',
-      'Not Proficient (<30%)'
+      'Highly Proficient (90%-100%)',
+      'Proficient (75%-89%)',
+      'Nearly Proficient (50%-74%)',
+      'Low Proficient (25%-49%)',
+      'Not Proficient (0%-24%)'
     ]
   ];
 

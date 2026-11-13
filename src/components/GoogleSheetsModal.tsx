@@ -160,7 +160,7 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
             ? 'Proficient'
             : pctNum >= 50
             ? 'Nearly Proficient'
-            : pctNum >= 30
+            : pctNum >= 25
             ? 'Low Proficient'
             : 'Not Proficient';
         rows.push([
