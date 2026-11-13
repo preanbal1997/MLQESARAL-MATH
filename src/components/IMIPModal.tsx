@@ -615,23 +615,6 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
 
   const domains = ['Number and Algebra', 'Measurement and Geometry', 'Data and Probability'];
 
-  const getDescriptorRangeLabel = (status: string) => {
-    switch (status) {
-      case 'Highly Proficient':
-        return '90% - 100%';
-      case 'Proficient':
-        return '75% - 89%';
-      case 'Nearly Proficient':
-        return '50% - 74%';
-      case 'Low Proficient':
-        return '30% - 49%';
-      case 'Not Proficient':
-        return 'Below 30%';
-      default:
-        return 'No Scores Yet';
-    }
-  };
-
   const getDescriptorBadgeClass = (status: string) => {
     switch (status) {
       case 'Highly Proficient':
@@ -906,9 +889,6 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
                 >
                   {stats.status.toUpperCase()}
                 </span>
-                <span className="ml-1.5 text-[10px] font-semibold text-slate-600">
-                  ({getDescriptorRangeLabel(stats.status)})
-                </span>
               </div>
             </div>
 
@@ -996,63 +976,6 @@ export const IMIPModal: React.FC<IMIPModalProps> = ({
                   })}
                 </tbody>
               </table>
-            </div>
-
-            {/* ADDITIONAL RESULTS: WORKSHEET SCORES BREAKDOWN & PROFICIENCY DESCRIPTOR SCALE */}
-            <div data-pdf-keep="true" className="imip-keep-together mb-5 border border-slate-900">
-              <div className="bg-slate-100 border-b border-slate-900 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2">
-                <span className="font-black text-[11px] uppercase tracking-wide text-slate-900">
-                  Additional Results: Individual Worksheet Scores Breakdown (WS 1 – WS {gradeData.totalWorksheets})
-                </span>
-                <span className="text-[11px] font-bold text-slate-900">
-                  Overall Result: {stats.totalScore}/{stats.totalItems} ({stats.completedCount > 0 ? stats.percentage.toFixed(1) : '0.0'}%) —{' '}
-                  <span className="uppercase font-black underline">{stats.status}</span>
-                </span>
-              </div>
-
-              <div className="p-2.5">
-                <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-12 gap-1.5">
-                  {Array.from({ length: gradeData.totalWorksheets }).map((_, i) => {
-                    const w = i + 1;
-                    const sc = learner.scores[w];
-                    const cfg = gradeData.worksheetConfigs.find(c => c.number === w);
-                    const max = sc?.totalItems || cfg?.defaultTotalItems || 25;
-                    const hasScore = sc && typeof sc.score === 'number';
-                    const wsPct = hasScore && max > 0 ? (sc.score / max) * 100 : null;
-
-                    return (
-                      <div
-                        key={w}
-                        className={`p-1 text-center border rounded text-[10px] ${
-                          hasScore
-                            ? 'bg-white border-slate-400'
-                            : 'bg-slate-50 border-slate-200 text-slate-400'
-                        }`}
-                      >
-                        <div className="font-bold text-slate-700 leading-tight">WS {w}</div>
-                        <div className="font-mono font-bold text-slate-950 leading-tight mt-0.5">
-                          {hasScore ? `${sc.score}/${max}` : '-'}
-                        </div>
-                        <div className="font-mono text-[9px] font-semibold text-slate-600 leading-tight">
-                          {wsPct !== null ? `${wsPct.toFixed(0)}%` : '—'}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Descriptor Reference Legend */}
-                <div className="mt-2 pt-1.5 border-t border-slate-300 flex flex-wrap items-center justify-between gap-1.5 text-[9.5px] text-slate-700">
-                  <span className="font-bold uppercase text-slate-800">Proficiency Scale:</span>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span><strong>Highly Proficient:</strong> 90%–100%</span>
-                    <span><strong>Proficient:</strong> 75%–89%</span>
-                    <span><strong>Nearly Proficient:</strong> 50%–74%</span>
-                    <span><strong>Low Proficient:</strong> 30%–49%</span>
-                    <span><strong>Not Proficient:</strong> Below 30%</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* SIGNATURES SECTION (Kept together so signatures never split across pages) */}

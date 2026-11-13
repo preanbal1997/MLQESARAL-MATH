@@ -238,7 +238,7 @@ export default function App() {
   const schoolAveragePct = totalItemsAll > 0 ? (totalScoreAll / totalItemsAll) * 100 : 0;
 
   return (
-    <div className="w-full min-h-screen bg-slate-100/70 flex flex-col font-sans">
+    <div className={`w-full ${selectedLearnerForIMIP ? 'min-h-screen print:min-h-0' : 'min-h-screen'} bg-slate-100/70 flex flex-col font-sans`}>
       {/* DepEd ARAL Top Header (Full Width) */}
       <Header
         syncConfig={syncConfig}
@@ -253,7 +253,7 @@ export default function App() {
         onLockSite={handleLockSite}
       />
 
-      <div className={cloudReady ? 'px-4 py-2 text-xs bg-emerald-50 text-emerald-800 border-b border-emerald-100' : 'px-4 py-2 text-xs bg-amber-50 text-amber-800 border-b border-amber-100'}>{cloudMessage}</div>
+      <div className={`no-print ${cloudReady ? 'px-4 py-2 text-xs bg-emerald-50 text-emerald-800 border-b border-emerald-100' : 'px-4 py-2 text-xs bg-amber-50 text-amber-800 border-b border-amber-100'}`}>{cloudMessage}</div>
 
       {/* Main Top Navigation (School Overview + Grade 1 to 6 tabs) */}
       <Navigation
@@ -263,7 +263,7 @@ export default function App() {
       />
 
       {/* Main Content Area (FULL-WIDTH, NO MAX-WIDTH CONSTRAINTS) */}
-      <main className="w-full flex-1 px-3 sm:px-6 py-5">
+      <main className={`w-full flex-1 px-3 sm:px-6 py-5 ${selectedLearnerForIMIP ? 'no-print' : ''}`}>
         {currentTab === 'overview' ? (
           <SchoolOverview
             schoolData={schoolData}
